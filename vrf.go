@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Algorand, Inc.
+// Copyright (C) 2019-2023 Algorand, Inc.
 // This file is part of go-algorand
 //
 // go-algorand is free software: you can redistribute it and/or modify
@@ -41,6 +41,11 @@ func init() {
 
 // VRFVerifier is a deprecated name for VrfPubkey
 type VRFVerifier = VrfPubkey
+
+// VRFVerifierMaxSize forwards to base implementation since it's expected by the msgp generated MaxSize functions
+func VRFVerifierMaxSize() int {
+	return VrfPubkeyMaxSize()
+}
 
 // VRFProof is a deprecated name for VrfProof
 type VRFProof = VrfProof
@@ -108,7 +113,7 @@ func (sk VrfPrivkey) proveBytes(msg []byte) (proof VrfProof, ok bool) {
 // Prove constructs a VRF Proof for a given Hashable.
 // ok will be false if the private key is malformed.
 func (sk VrfPrivkey) Prove(message Hashable) (proof VrfProof, ok bool) {
-	return sk.proveBytes(hashRep(message))
+	return sk.proveBytes(HashRep(message))
 }
 
 // Hash converts a VRF proof to a VRF output without verifying the proof.
@@ -134,5 +139,5 @@ func (pk VrfPubkey) verifyBytes(proof VrfProof, msg []byte) (bool, VrfOutput) {
 // However, given a public key and message, all valid proofs will yield the same output.
 // Moreover, the output is indistinguishable from random to anyone without the proof or the secret key.
 func (pk VrfPubkey) Verify(p VrfProof, message Hashable) (bool, VrfOutput) {
-	return pk.verifyBytes(p, hashRep(message))
+	return pk.verifyBytes(p, HashRep(message))
 }

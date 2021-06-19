@@ -36,8 +36,14 @@ func VrfKeygenFromSeedGo(seed [32]byte) (VrfPubkey, VrfPrivkey) {
 	h := sha512.New()
 	h.Write(seed[:])
 	hSum := h.Sum(nil)
+	copy(sk[:], hSum[:32])
+	sk[0] &= 248
+	sk[31] &= 127
+	sk[31] |= 64
 	p := edwards25519.NewScalar()
-	p.SetBytesWithClamping(hSum[:32])
+	skBytes := make([]byte, 64)
+	copy(skBytes, sk[:32])
+	p.SetUniformBytes(skBytes)
 	A := edwards25519.NewIdentityPoint().ScalarBaseMult(p)
 	copy(pk[:], A.Bytes())
 	copy(sk[:], seed[:])
@@ -72,7 +78,7 @@ func vrfVerifyAndHash(pk []byte, proof []byte, msg []byte) ([]byte, error) {
 	}
 	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(edwards25519.NewIdentityPoint()) == 1
 	if isSmallOrder {
-		return nil, fmt.Errorf("public key is a small order point")
+		return nil, fmt.Errorf("expected key to have small order")
 	}
 	// vrf_verify
 	ok, err := vrfVerify(Y, proof, msg)
@@ -92,17 +98,19 @@ func vrfVerifyAndHash(pk []byte, proof []byte, msg []byte) ([]byte, error) {
  * Return 0 on success, -1 on failure decoding the public point Y.
  */
 func (sk VrfPrivkey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte, error) {
+	var tmp [64]byte
 	h := sha512.New()
 	h.Write(sk[:32])
 	hSum := h.Sum(nil)
+	copy(tmp[:], hSum[:64])
 	xScaler := edwards25519.NewScalar()
-	xScaler.SetBytesWithClamping(hSum[:32])
+	tmpBytes := make([]byte, 64)
+	copy(tmpBytes, tmp[:32])
+	xScaler.SetBytesWithClamping(tmp[:32])
 
-	truncatedHashedSKString := hSum[32:]
+	truncatedHashedSKString := tmp[32:]
 	Y := edwards25519.NewIdentityPoint()
-	if _, err := Y.SetBytes(sk[32:]); err != nil {
-		panic(err)
-	}
+	Y.SetBytes(sk[32:])
 	return Y, xScaler, truncatedHashedSKString, nil
 }
 
@@ -135,7 +143,8 @@ func pureGoVrfProve(Y *edwards25519.Point, xScalar *edwards25519.Scalar, truncHa
 	if err != nil {
 		return VrfProof{}, err
 	}
-	Gamma := new(edwards25519.Point).ScalarMult(xScalar, H)
+	Gamma := edwards25519.NewIdentityPoint()
+	Gamma.ScalarMult(xScalar, H)
 
 	kScalar := vrfNonceGeneration(truncHashedSk, H)
 	kB := edwards25519.NewIdentityPoint()
@@ -186,7 +195,6 @@ func ge25519FromUniform(r []byte) ([]byte, error) {
 	var eIsMinus1 int
 	var xSign byte
 
-	one := new(field.Element).One()
 	copy(s, r)
 	xSign = s[31] & 0x80
 	s[31] &= 0x7f
@@ -197,13 +205,15 @@ func ge25519FromUniform(r []byte) ([]byte, error) {
 	// elligator
 	rr2.Square(rr2) // fe25519_sq2(rr2, rr2);
 	rr2.Add(rr2, rr2)
-	rr2.Add(rr2, one)
-	rr2.Invert(rr2) // fe25519_invert(rr2, rr2);
+	rr2Bytes := rr2.Bytes()
+	rr2Bytes[0]++
+	rr2.SetBytes(rr2Bytes) // rr2[0]++;
+	rr2.Invert(rr2)        // fe25519_invert(rr2, rr2);
 
 	x = &field.Element{}
 
 	const curve25519A = 486662
-	curve25519AElement := new(field.Element).Mult32(one, curve25519A)
+	curve25519AElement := (&field.Element{}).One().Mult32((&field.Element{}).One(), curve25519A)
 
 	x.Mult32(rr2, curve25519A) // fe25519_mul(x, curve25519_A, rr2);
 	x.Negate(x)                // fe25519_neg(x, x);
@@ -223,7 +233,8 @@ func ge25519FromUniform(r []byte) ([]byte, error) {
 
 	eIsMinus1 = int(s[1] & 1) // e_is_minus_1 = s[1] & 1;
 	eIsNotMinus1 := eIsMinus1 ^ 1
-	negx = new(field.Element).Negate(x)             // fe25519_neg(negx, x);
+	negx = (&field.Element{}).Set(x)
+	negx.Negate(negx)                               // fe25519_neg(negx, x);
 	x.Select(x, negx, eIsNotMinus1)                 // fe25519_cmov(x, negx, e_is_minus_1);
 	x2.Zero()                                       // fe25519_0(x2);
 	x2.Select(x2, curve25519AElement, eIsNotMinus1) // fe25519_cmov(x2, curve25519_A, e_is_minus_1);
@@ -288,9 +299,7 @@ func vrfHashPoints(P1, P2, P3, P4 *edwards25519.Point) *edwards25519.Scalar {
 
 	copy(result[:], sum[:16])
 	r := edwards25519.NewScalar()
-	if _, err := r.SetCanonicalBytes(result); err != nil {
-		panic(err)
-	}
+	r.SetCanonicalBytes(result)
 	return r
 
 }
@@ -370,7 +379,7 @@ func chi25519(z *field.Element) *field.Element {
 /* Verify a proof per draft section 5.3.
  * We assume Y_point has passed public key validation already.
  * Assuming verification succeeds, runtime does not depend on the message alpha
- * (but does depend on its length)
+ * (but does depend on its length alphalen)
  */
 func vrfVerify(Y *edwards25519.Point, pi []byte, alpha []byte) (bool, error) {
 	var U, V *edwards25519.Point // ge25519_p3     H_point, Gamma_point, U_point, V_point, tmp_p3_point;
@@ -418,7 +427,8 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, alpha []byte) (bool, error) {
 
 /* Convert a VRF proof pi into a VRF output hash beta per draft spec section 5.2.
  * This function does not verify the proof! For an untrusted proof, instead call
- * vrfVerifyAndHash, which will output the hash if verification succeeds.
+ * crypto_vrf_ietfdraft03_verify, which will output the hash if verification
+ * succeeds.
  */
 func cryptoVrfIetfdraft03ProofToHash(pi []byte) ([]byte, error) {
 	var hashInput [34]byte // unsigned char hash_input[2+32];
@@ -438,6 +448,7 @@ func cryptoVrfIetfdraft03ProofToHash(pi []byte) ([]byte, error) {
 
 /* Decode an 80-byte proof pi into a point gamma, a 16-byte scalar c, and a
  * 32-byte scalar s, as specified in IETF draft section 5.4.4.
+ * Returns 0 on success, nonzero on failure.
  */
 func vrfIetfdraft03DecodeProof(pi []byte) (gamma *edwards25519.Point, c []byte, s []byte, err error) {
 	if len(pi) != 80 {
