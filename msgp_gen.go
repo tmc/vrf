@@ -6,6 +6,7 @@ import (
 	_ "runtime/cgo"
 	_ "unsafe"
 
+	cfalcon "github.com/algorand/falcon"
 	"github.com/algorand/msgp/msgp"
 )
 
@@ -17,6 +18,88 @@ import (
 //    |-----> (*) CanUnmarshalMsg
 //    |-----> (*) Msgsize
 //    |-----> (*) MsgIsZero
+//    |-----> DigestMaxSize()
+//
+// FalconPrivateKey
+//         |-----> (*) MarshalMsg
+//         |-----> (*) CanMarshalMsg
+//         |-----> (*) UnmarshalMsg
+//         |-----> (*) CanUnmarshalMsg
+//         |-----> (*) Msgsize
+//         |-----> (*) MsgIsZero
+//         |-----> FalconPrivateKeyMaxSize()
+//
+// FalconPublicKey
+//        |-----> (*) MarshalMsg
+//        |-----> (*) CanMarshalMsg
+//        |-----> (*) UnmarshalMsg
+//        |-----> (*) CanUnmarshalMsg
+//        |-----> (*) Msgsize
+//        |-----> (*) MsgIsZero
+//        |-----> FalconPublicKeyMaxSize()
+//
+// FalconSeed
+//      |-----> (*) MarshalMsg
+//      |-----> (*) CanMarshalMsg
+//      |-----> (*) UnmarshalMsg
+//      |-----> (*) CanUnmarshalMsg
+//      |-----> (*) Msgsize
+//      |-----> (*) MsgIsZero
+//      |-----> FalconSeedMaxSize()
+//
+// FalconSignature
+//        |-----> MarshalMsg
+//        |-----> CanMarshalMsg
+//        |-----> (*) UnmarshalMsg
+//        |-----> (*) CanUnmarshalMsg
+//        |-----> Msgsize
+//        |-----> MsgIsZero
+//        |-----> FalconSignatureMaxSize()
+//
+// FalconSigner
+//       |-----> (*) MarshalMsg
+//       |-----> (*) CanMarshalMsg
+//       |-----> (*) UnmarshalMsg
+//       |-----> (*) CanUnmarshalMsg
+//       |-----> (*) Msgsize
+//       |-----> (*) MsgIsZero
+//       |-----> FalconSignerMaxSize()
+//
+// FalconVerifier
+//        |-----> (*) MarshalMsg
+//        |-----> (*) CanMarshalMsg
+//        |-----> (*) UnmarshalMsg
+//        |-----> (*) CanUnmarshalMsg
+//        |-----> (*) Msgsize
+//        |-----> (*) MsgIsZero
+//        |-----> FalconVerifierMaxSize()
+//
+// GenericDigest
+//       |-----> MarshalMsg
+//       |-----> CanMarshalMsg
+//       |-----> (*) UnmarshalMsg
+//       |-----> (*) CanUnmarshalMsg
+//       |-----> Msgsize
+//       |-----> MsgIsZero
+//       |-----> GenericDigestMaxSize()
+//
+// HashFactory
+//      |-----> (*) MarshalMsg
+//      |-----> (*) CanMarshalMsg
+//      |-----> (*) UnmarshalMsg
+//      |-----> (*) CanUnmarshalMsg
+//      |-----> (*) Msgsize
+//      |-----> (*) MsgIsZero
+//      |-----> HashFactoryMaxSize()
+//
+// HashType
+//     |-----> MarshalMsg
+//     |-----> CanMarshalMsg
+//     |-----> (*) UnmarshalMsg
+//     |-----> (*) CanUnmarshalMsg
+//     |-----> Msgsize
+//     |-----> MsgIsZero
+//     |-----> HashTypeMaxSize()
 //
 // MasterDerivationKey
 //          |-----> (*) MarshalMsg
@@ -25,6 +108,7 @@ import (
 //          |-----> (*) CanUnmarshalMsg
 //          |-----> (*) Msgsize
 //          |-----> (*) MsgIsZero
+//          |-----> MasterDerivationKeyMaxSize()
 //
 // MultisigSig
 //      |-----> (*) MarshalMsg
@@ -33,6 +117,7 @@ import (
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
+//      |-----> MultisigSigMaxSize()
 //
 // MultisigSubsig
 //        |-----> (*) MarshalMsg
@@ -41,6 +126,7 @@ import (
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
+//        |-----> MultisigSubsigMaxSize()
 //
 // OneTimeSignature
 //         |-----> (*) MarshalMsg
@@ -49,6 +135,7 @@ import (
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
+//         |-----> OneTimeSignatureMaxSize()
 //
 // OneTimeSignatureSecrets
 //            |-----> (*) MarshalMsg
@@ -57,6 +144,7 @@ import (
 //            |-----> (*) CanUnmarshalMsg
 //            |-----> (*) Msgsize
 //            |-----> (*) MsgIsZero
+//            |-----> OneTimeSignatureSecretsMaxSize()
 //
 // OneTimeSignatureSecretsPersistent
 //                 |-----> (*) MarshalMsg
@@ -65,6 +153,7 @@ import (
 //                 |-----> (*) CanUnmarshalMsg
 //                 |-----> (*) Msgsize
 //                 |-----> (*) MsgIsZero
+//                 |-----> OneTimeSignatureSecretsPersistentMaxSize()
 //
 // OneTimeSignatureSubkeyBatchID
 //               |-----> (*) MarshalMsg
@@ -73,6 +162,7 @@ import (
 //               |-----> (*) CanUnmarshalMsg
 //               |-----> (*) Msgsize
 //               |-----> (*) MsgIsZero
+//               |-----> OneTimeSignatureSubkeyBatchIDMaxSize()
 //
 // OneTimeSignatureSubkeyOffsetID
 //                |-----> (*) MarshalMsg
@@ -81,6 +171,7 @@ import (
 //                |-----> (*) CanUnmarshalMsg
 //                |-----> (*) Msgsize
 //                |-----> (*) MsgIsZero
+//                |-----> OneTimeSignatureSubkeyOffsetIDMaxSize()
 //
 // OneTimeSignatureVerifier
 //             |-----> (*) MarshalMsg
@@ -89,6 +180,7 @@ import (
 //             |-----> (*) CanUnmarshalMsg
 //             |-----> (*) Msgsize
 //             |-----> (*) MsgIsZero
+//             |-----> OneTimeSignatureVerifierMaxSize()
 //
 // PrivateKey
 //      |-----> (*) MarshalMsg
@@ -97,6 +189,7 @@ import (
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
+//      |-----> PrivateKeyMaxSize()
 //
 // PublicKey
 //     |-----> (*) MarshalMsg
@@ -105,6 +198,7 @@ import (
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
+//     |-----> PublicKeyMaxSize()
 //
 // Seed
 //   |-----> (*) MarshalMsg
@@ -113,6 +207,7 @@ import (
 //   |-----> (*) CanUnmarshalMsg
 //   |-----> (*) Msgsize
 //   |-----> (*) MsgIsZero
+//   |-----> SeedMaxSize()
 //
 // Signature
 //     |-----> (*) MarshalMsg
@@ -121,6 +216,7 @@ import (
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
+//     |-----> SignatureMaxSize()
 //
 // SignatureSecrets
 //         |-----> (*) MarshalMsg
@@ -129,6 +225,7 @@ import (
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
+//         |-----> SignatureSecretsMaxSize()
 //
 // VRFSecrets
 //      |-----> (*) MarshalMsg
@@ -137,6 +234,7 @@ import (
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
+//      |-----> VRFSecretsMaxSize()
 //
 // VrfOutput
 //     |-----> (*) MarshalMsg
@@ -145,6 +243,7 @@ import (
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
+//     |-----> VrfOutputMaxSize()
 //
 // VrfPrivkey
 //      |-----> (*) MarshalMsg
@@ -153,6 +252,7 @@ import (
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
+//      |-----> VrfPrivkeyMaxSize()
 //
 // VrfProof
 //     |-----> (*) MarshalMsg
@@ -161,6 +261,7 @@ import (
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
+//     |-----> VrfProofMaxSize()
 //
 // VrfPubkey
 //     |-----> (*) MarshalMsg
@@ -169,6 +270,7 @@ import (
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
+//     |-----> VrfPubkeyMaxSize()
 //
 // ed25519PrivateKey
 //         |-----> (*) MarshalMsg
@@ -177,6 +279,7 @@ import (
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
+//         |-----> Ed25519PrivateKeyMaxSize()
 //
 // ed25519PublicKey
 //         |-----> (*) MarshalMsg
@@ -185,6 +288,7 @@ import (
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
+//         |-----> Ed25519PublicKeyMaxSize()
 //
 // ed25519Seed
 //      |-----> (*) MarshalMsg
@@ -193,6 +297,7 @@ import (
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
+//      |-----> Ed25519SeedMaxSize()
 //
 // ed25519Signature
 //         |-----> (*) MarshalMsg
@@ -201,6 +306,7 @@ import (
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
+//         |-----> Ed25519SignatureMaxSize()
 //
 // ephemeralSubkey
 //        |-----> (*) MarshalMsg
@@ -209,6 +315,7 @@ import (
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
+//        |-----> EphemeralSubkeyMaxSize()
 //
 
 // MarshalMsg implements msgp.Marshaler
@@ -250,6 +357,704 @@ func (z *Digest) MsgIsZero() bool {
 	return (*z) == (Digest{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func DigestMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((DigestSize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *FalconPrivateKey) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendBytes(o, (*z)[:])
+	return
+}
+
+func (_ *FalconPrivateKey) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconPrivateKey)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconPrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconPrivateKey) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconPrivateKey)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *FalconPrivateKey) Msgsize() (s int) {
+	s = msgp.ArrayHeaderSize + (cfalcon.PrivateKeySize * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *FalconPrivateKey) MsgIsZero() bool {
+	return (*z) == (FalconPrivateKey{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconPrivateKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((cfalcon.PrivateKeySize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *FalconPublicKey) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendBytes(o, (*z)[:])
+	return
+}
+
+func (_ *FalconPublicKey) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconPublicKey)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconPublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconPublicKey) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconPublicKey)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *FalconPublicKey) Msgsize() (s int) {
+	s = msgp.ArrayHeaderSize + (cfalcon.PublicKeySize * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *FalconPublicKey) MsgIsZero() bool {
+	return (*z) == (FalconPublicKey{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconPublicKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((cfalcon.PublicKeySize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *FalconSeed) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendBytes(o, (*z)[:])
+	return
+}
+
+func (_ *FalconSeed) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconSeed)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconSeed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
+	if err != nil {
+		err = msgp.WrapError(err)
+		return
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconSeed) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconSeed)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *FalconSeed) Msgsize() (s int) {
+	s = msgp.ArrayHeaderSize + (FalconSeedSize * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *FalconSeed) MsgIsZero() bool {
+	return (*z) == (FalconSeed{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconSeedMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((FalconSeedSize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z FalconSignature) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendBytes(o, []byte(z))
+	return
+}
+
+func (_ FalconSignature) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(FalconSignature)
+	if !ok {
+		_, ok = (z).(*FalconSignature)
+	}
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 []byte
+		var zb0002 int
+		zb0002, err = msgp.ReadBytesBytesHeader(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0002 > FalconMaxSignatureSize {
+			err = msgp.ErrOverflow(uint64(zb0002), uint64(FalconMaxSignatureSize))
+			return
+		}
+		zb0001, bts, err = msgp.ReadBytesBytes(bts, []byte((*z)))
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = FalconSignature(zb0001)
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconSignature) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconSignature)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z FalconSignature) Msgsize() (s int) {
+	s = msgp.BytesPrefixSize + len([]byte(z))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z FalconSignature) MsgIsZero() bool {
+	return len(z) == 0
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconSignatureMaxSize() (s int) {
+	s = msgp.BytesPrefixSize + FalconMaxSignatureSize
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *FalconSigner) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	// omitempty: check for empty values
+	zb0003Len := uint32(2)
+	var zb0003Mask uint8 /* 3 bits */
+	if (*z).PublicKey == (FalconPublicKey{}) {
+		zb0003Len--
+		zb0003Mask |= 0x2
+	}
+	if (*z).PrivateKey == (FalconPrivateKey{}) {
+		zb0003Len--
+		zb0003Mask |= 0x4
+	}
+	// variable map header, size zb0003Len
+	o = append(o, 0x80|uint8(zb0003Len))
+	if zb0003Len != 0 {
+		if (zb0003Mask & 0x2) == 0 { // if not empty
+			// string "pk"
+			o = append(o, 0xa2, 0x70, 0x6b)
+			o = msgp.AppendBytes(o, ((*z).PublicKey)[:])
+		}
+		if (zb0003Mask & 0x4) == 0 { // if not empty
+			// string "sk"
+			o = append(o, 0xa2, 0x73, 0x6b)
+			o = msgp.AppendBytes(o, ((*z).PrivateKey)[:])
+		}
+	}
+	return
+}
+
+func (_ *FalconSigner) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconSigner)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconSigner) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0003 int
+	var zb0004 bool
+	zb0003, zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if _, ok := err.(msgp.TypeError); ok {
+		zb0003, zb0004, bts, err = msgp.ReadArrayHeaderBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0003 > 0 {
+			zb0003--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PublicKey)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PublicKey")
+				return
+			}
+		}
+		if zb0003 > 0 {
+			zb0003--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PrivateKey)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PrivateKey")
+				return
+			}
+		}
+		if zb0003 > 0 {
+			err = msgp.ErrTooManyArrayFields(zb0003)
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array")
+				return
+			}
+		}
+	} else {
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0004 {
+			(*z) = FalconSigner{}
+		}
+		for zb0003 > 0 {
+			zb0003--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+			switch string(field) {
+			case "pk":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PublicKey)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PublicKey")
+					return
+				}
+			case "sk":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PrivateKey)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PrivateKey")
+					return
+				}
+			default:
+				err = msgp.ErrNoField(string(field))
+				if err != nil {
+					err = msgp.WrapError(err)
+					return
+				}
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconSigner) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconSigner)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *FalconSigner) Msgsize() (s int) {
+	s = 1 + 3 + msgp.ArrayHeaderSize + (cfalcon.PublicKeySize * (msgp.ByteSize)) + 3 + msgp.ArrayHeaderSize + (cfalcon.PrivateKeySize * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *FalconSigner) MsgIsZero() bool {
+	return ((*z).PublicKey == (FalconPublicKey{})) && ((*z).PrivateKey == (FalconPrivateKey{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconSignerMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.PublicKey
+	s += msgp.ArrayHeaderSize + ((cfalcon.PublicKeySize) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.PrivateKey
+	s += msgp.ArrayHeaderSize + ((cfalcon.PrivateKeySize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *FalconVerifier) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	// omitempty: check for empty values
+	zb0002Len := uint32(1)
+	var zb0002Mask uint8 /* 2 bits */
+	if (*z).PublicKey == (FalconPublicKey{}) {
+		zb0002Len--
+		zb0002Mask |= 0x2
+	}
+	// variable map header, size zb0002Len
+	o = append(o, 0x80|uint8(zb0002Len))
+	if zb0002Len != 0 {
+		if (zb0002Mask & 0x2) == 0 { // if not empty
+			// string "k"
+			o = append(o, 0xa1, 0x6b)
+			o = msgp.AppendBytes(o, ((*z).PublicKey)[:])
+		}
+	}
+	return
+}
+
+func (_ *FalconVerifier) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconVerifier)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *FalconVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0002 int
+	var zb0003 bool
+	zb0002, zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if _, ok := err.(msgp.TypeError); ok {
+		zb0002, zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0002 > 0 {
+			zb0002--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PublicKey)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PublicKey")
+				return
+			}
+		}
+		if zb0002 > 0 {
+			err = msgp.ErrTooManyArrayFields(zb0002)
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array")
+				return
+			}
+		}
+	} else {
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0003 {
+			(*z) = FalconVerifier{}
+		}
+		for zb0002 > 0 {
+			zb0002--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+			switch string(field) {
+			case "k":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PublicKey)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PublicKey")
+					return
+				}
+			default:
+				err = msgp.ErrNoField(string(field))
+				if err != nil {
+					err = msgp.WrapError(err)
+					return
+				}
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (_ *FalconVerifier) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*FalconVerifier)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *FalconVerifier) Msgsize() (s int) {
+	s = 1 + 2 + msgp.ArrayHeaderSize + (cfalcon.PublicKeySize * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *FalconVerifier) MsgIsZero() bool {
+	return ((*z).PublicKey == (FalconPublicKey{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func FalconVerifierMaxSize() (s int) {
+	s = 1 + 2
+	// Calculating size of array: z.PublicKey
+	s += msgp.ArrayHeaderSize + ((cfalcon.PublicKeySize) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z GenericDigest) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendBytes(o, []byte(z))
+	return
+}
+
+func (_ GenericDigest) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(GenericDigest)
+	if !ok {
+		_, ok = (z).(*GenericDigest)
+	}
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *GenericDigest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 []byte
+		var zb0002 int
+		zb0002, err = msgp.ReadBytesBytesHeader(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0002 > MaxHashDigestSize {
+			err = msgp.ErrOverflow(uint64(zb0002), uint64(MaxHashDigestSize))
+			return
+		}
+		zb0001, bts, err = msgp.ReadBytesBytes(bts, []byte((*z)))
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = GenericDigest(zb0001)
+	}
+	o = bts
+	return
+}
+
+func (_ *GenericDigest) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*GenericDigest)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z GenericDigest) Msgsize() (s int) {
+	s = msgp.BytesPrefixSize + len([]byte(z))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z GenericDigest) MsgIsZero() bool {
+	return len(z) == 0
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func GenericDigestMaxSize() (s int) {
+	s = msgp.BytesPrefixSize + MaxHashDigestSize
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *HashFactory) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	// omitempty: check for empty values
+	zb0001Len := uint32(1)
+	var zb0001Mask uint8 /* 2 bits */
+	if (*z).HashType == 0 {
+		zb0001Len--
+		zb0001Mask |= 0x2
+	}
+	// variable map header, size zb0001Len
+	o = append(o, 0x80|uint8(zb0001Len))
+	if zb0001Len != 0 {
+		if (zb0001Mask & 0x2) == 0 { // if not empty
+			// string "t"
+			o = append(o, 0xa1, 0x74)
+			o = msgp.AppendUint16(o, uint16((*z).HashType))
+		}
+	}
+	return
+}
+
+func (_ *HashFactory) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*HashFactory)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *HashFactory) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var zb0001 int
+	var zb0002 bool
+	zb0001, zb0002, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if _, ok := err.(msgp.TypeError); ok {
+		zb0001, zb0002, bts, err = msgp.ReadArrayHeaderBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0001 > 0 {
+			zb0001--
+			{
+				var zb0003 uint16
+				zb0003, bts, err = msgp.ReadUint16Bytes(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "struct-from-array", "HashType")
+					return
+				}
+				(*z).HashType = HashType(zb0003)
+			}
+		}
+		if zb0001 > 0 {
+			err = msgp.ErrTooManyArrayFields(zb0001)
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array")
+				return
+			}
+		}
+	} else {
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0002 {
+			(*z) = HashFactory{}
+		}
+		for zb0001 > 0 {
+			zb0001--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+			switch string(field) {
+			case "t":
+				{
+					var zb0004 uint16
+					zb0004, bts, err = msgp.ReadUint16Bytes(bts)
+					if err != nil {
+						err = msgp.WrapError(err, "HashType")
+						return
+					}
+					(*z).HashType = HashType(zb0004)
+				}
+			default:
+				err = msgp.ErrNoField(string(field))
+				if err != nil {
+					err = msgp.WrapError(err)
+					return
+				}
+			}
+		}
+	}
+	o = bts
+	if err = z.Validate(); err != nil {
+		return
+	}
+	return
+}
+
+func (_ *HashFactory) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*HashFactory)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *HashFactory) Msgsize() (s int) {
+	s = 1 + 2 + msgp.Uint16Size
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *HashFactory) MsgIsZero() bool {
+	return ((*z).HashType == 0)
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func HashFactoryMaxSize() (s int) {
+	s = 1 + 2 + msgp.Uint16Size
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z HashType) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendUint16(o, uint16(z))
+	return
+}
+
+func (_ HashType) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(HashType)
+	if !ok {
+		_, ok = (z).(*HashType)
+	}
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *HashType) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	{
+		var zb0001 uint16
+		zb0001, bts, err = msgp.ReadUint16Bytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		(*z) = HashType(zb0001)
+	}
+	o = bts
+	return
+}
+
+func (_ *HashType) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*HashType)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z HashType) Msgsize() (s int) {
+	s = msgp.Uint16Size
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z HashType) MsgIsZero() bool {
+	return z == 0
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func HashTypeMaxSize() (s int) {
+	s = msgp.Uint16Size
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *MasterDerivationKey) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -287,6 +1092,13 @@ func (z *MasterDerivationKey) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *MasterDerivationKey) MsgIsZero() bool {
 	return (*z) == (MasterDerivationKey{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func MasterDerivationKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((masterDerivationKeyLenBytes) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -493,6 +1305,14 @@ func (z *MultisigSig) MsgIsZero() bool {
 	return ((*z).Version == 0) && ((*z).Threshold == 0) && (len((*z).Subsigs) == 0)
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func MultisigSigMaxSize() (s int) {
+	s = 1 + 2 + msgp.Uint8Size + 4 + msgp.Uint8Size + 7
+	// Calculating size of slice: z.Subsigs
+	s += msgp.ArrayHeaderSize + ((maxMultisig) * (MultisigSubsigMaxSize()))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *MultisigSubsig) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -620,6 +1440,17 @@ func (z *MultisigSubsig) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *MultisigSubsig) MsgIsZero() bool {
 	return ((*z).Key == (PublicKey{})) && ((*z).Sig == (Signature{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func MultisigSubsigMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.Key
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 2
+	// Calculating size of array: z.Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -799,6 +1630,29 @@ func (z *OneTimeSignature) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *OneTimeSignature) MsgIsZero() bool {
 	return ((*z).Sig == (ed25519Signature{})) && ((*z).PK == (ed25519PublicKey{})) && ((*z).PKSigOld == (ed25519Signature{})) && ((*z).PK2 == (ed25519PublicKey{})) && ((*z).PK1Sig == (ed25519Signature{})) && ((*z).PK2Sig == (ed25519Signature{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureMaxSize() (s int) {
+	s = 1 + 2
+	// Calculating size of array: z.Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 2
+	// Calculating size of array: z.PK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.PKSigOld
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.PK2
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 4
+	// Calculating size of array: z.PK1Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 4
+	// Calculating size of array: z.PK2Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -1131,6 +1985,26 @@ func (z *OneTimeSignatureSecrets) MsgIsZero() bool {
 	return ((*z).OneTimeSignatureSecretsPersistent.OneTimeSignatureVerifier == (OneTimeSignatureVerifier{})) && ((*z).OneTimeSignatureSecretsPersistent.FirstBatch == 0) && (len((*z).OneTimeSignatureSecretsPersistent.Batches) == 0) && ((*z).OneTimeSignatureSecretsPersistent.FirstOffset == 0) && (len((*z).OneTimeSignatureSecretsPersistent.Offsets) == 0) && ((*z).OneTimeSignatureSecretsPersistent.OffsetsPK2 == (ed25519PublicKey{})) && ((*z).OneTimeSignatureSecretsPersistent.OffsetsPK2Sig == (ed25519Signature{}))
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureSecretsMaxSize() (s int) {
+	s = 1 + 25
+	// Calculating size of array: z.OneTimeSignatureSecretsPersistent.OneTimeSignatureVerifier
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 6 + msgp.Uint64Size + 4
+	// Calculating size of slice: z.OneTimeSignatureSecretsPersistent.Batches
+	panic("Slice z.OneTimeSignatureSecretsPersistent.Batches is unbounded")
+	s += 9 + msgp.Uint64Size + 8
+	// Calculating size of slice: z.OneTimeSignatureSecretsPersistent.Offsets
+	panic("Slice z.OneTimeSignatureSecretsPersistent.Offsets is unbounded")
+	s += 7
+	// Calculating size of array: z.OneTimeSignatureSecretsPersistent.OffsetsPK2
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 10
+	// Calculating size of array: z.OneTimeSignatureSecretsPersistent.OffsetsPK2Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *OneTimeSignatureSecretsPersistent) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1461,6 +2335,26 @@ func (z *OneTimeSignatureSecretsPersistent) MsgIsZero() bool {
 	return ((*z).OneTimeSignatureVerifier == (OneTimeSignatureVerifier{})) && ((*z).FirstBatch == 0) && (len((*z).Batches) == 0) && ((*z).FirstOffset == 0) && (len((*z).Offsets) == 0) && ((*z).OffsetsPK2 == (ed25519PublicKey{})) && ((*z).OffsetsPK2Sig == (ed25519Signature{}))
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureSecretsPersistentMaxSize() (s int) {
+	s = 1 + 25
+	// Calculating size of array: z.OneTimeSignatureVerifier
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 6 + msgp.Uint64Size + 4
+	// Calculating size of slice: z.Batches
+	panic("Slice z.Batches is unbounded")
+	s += 9 + msgp.Uint64Size + 8
+	// Calculating size of slice: z.Offsets
+	panic("Slice z.Offsets is unbounded")
+	s += 7
+	// Calculating size of array: z.OffsetsPK2
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 10
+	// Calculating size of array: z.OffsetsPK2Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *OneTimeSignatureSubkeyBatchID) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1570,6 +2464,15 @@ func (z *OneTimeSignatureSubkeyBatchID) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *OneTimeSignatureSubkeyBatchID) MsgIsZero() bool {
 	return ((*z).SubKeyPK == (ed25519PublicKey{})) && ((*z).Batch == 0)
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureSubkeyBatchIDMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.SubKeyPK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 6 + msgp.Uint64Size
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -1700,6 +2603,15 @@ func (z *OneTimeSignatureSubkeyOffsetID) MsgIsZero() bool {
 	return ((*z).SubKeyPK == (ed25519PublicKey{})) && ((*z).Batch == 0) && ((*z).Offset == 0)
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureSubkeyOffsetIDMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.SubKeyPK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 6 + msgp.Uint64Size + 4 + msgp.Uint64Size
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *OneTimeSignatureVerifier) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1737,6 +2649,13 @@ func (z *OneTimeSignatureVerifier) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *OneTimeSignatureVerifier) MsgIsZero() bool {
 	return (*z) == (OneTimeSignatureVerifier{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func OneTimeSignatureVerifierMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -1778,6 +2697,13 @@ func (z *PrivateKey) MsgIsZero() bool {
 	return (*z) == (PrivateKey{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func PrivateKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *PublicKey) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1815,6 +2741,13 @@ func (z *PublicKey) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *PublicKey) MsgIsZero() bool {
 	return (*z) == (PublicKey{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func PublicKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -1856,6 +2789,13 @@ func (z *Seed) MsgIsZero() bool {
 	return (*z) == (Seed{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func SeedMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *Signature) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1895,6 +2835,13 @@ func (z *Signature) MsgIsZero() bool {
 	return (*z) == (Signature{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func SignatureMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *SignatureSecrets) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -1904,7 +2851,7 @@ func (z *SignatureSecrets) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.AppendBytes(o, ((*z).SK)[:])
 	// string "SignatureVerifier"
 	o = append(o, 0xb1, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69, 0x65, 0x72)
-	o = (*z).SignatureVerifier.MarshalMsg(o)
+	o = msgp.AppendBytes(o, ((*z).SignatureVerifier)[:])
 	return
 }
 
@@ -1917,33 +2864,33 @@ func (_ *SignatureSecrets) CanMarshalMsg(z interface{}) bool {
 func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var zb0002 int
-	var zb0003 bool
-	zb0002, zb0003, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zb0003 int
+	var zb0004 bool
+	zb0003, zb0004, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if _, ok := err.(msgp.TypeError); ok {
-		zb0002, zb0003, bts, err = msgp.ReadArrayHeaderBytes(bts)
+		zb0003, zb0004, bts, err = msgp.ReadArrayHeaderBytes(bts)
 		if err != nil {
 			err = msgp.WrapError(err)
 			return
 		}
-		if zb0002 > 0 {
-			zb0002--
-			bts, err = (*z).SignatureVerifier.UnmarshalMsg(bts)
+		if zb0003 > 0 {
+			zb0003--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).SignatureVerifier)[:])
 			if err != nil {
 				err = msgp.WrapError(err, "struct-from-array", "SignatureVerifier")
 				return
 			}
 		}
-		if zb0002 > 0 {
-			zb0002--
+		if zb0003 > 0 {
+			zb0003--
 			bts, err = msgp.ReadExactBytes(bts, ((*z).SK)[:])
 			if err != nil {
 				err = msgp.WrapError(err, "struct-from-array", "SK")
 				return
 			}
 		}
-		if zb0002 > 0 {
-			err = msgp.ErrTooManyArrayFields(zb0002)
+		if zb0003 > 0 {
+			err = msgp.ErrTooManyArrayFields(zb0003)
 			if err != nil {
 				err = msgp.WrapError(err, "struct-from-array")
 				return
@@ -1954,11 +2901,11 @@ func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			err = msgp.WrapError(err)
 			return
 		}
-		if zb0003 {
+		if zb0004 {
 			(*z) = SignatureSecrets{}
 		}
-		for zb0002 > 0 {
-			zb0002--
+		for zb0003 > 0 {
+			zb0003--
 			field, bts, err = msgp.ReadMapKeyZC(bts)
 			if err != nil {
 				err = msgp.WrapError(err)
@@ -1966,7 +2913,7 @@ func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			}
 			switch string(field) {
 			case "SignatureVerifier":
-				bts, err = (*z).SignatureVerifier.UnmarshalMsg(bts)
+				bts, err = msgp.ReadExactBytes(bts, ((*z).SignatureVerifier)[:])
 				if err != nil {
 					err = msgp.WrapError(err, "SignatureVerifier")
 					return
@@ -1997,13 +2944,24 @@ func (_ *SignatureSecrets) CanUnmarshalMsg(z interface{}) bool {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *SignatureSecrets) Msgsize() (s int) {
-	s = 1 + 18 + (*z).SignatureVerifier.Msgsize() + 3 + msgp.ArrayHeaderSize + (64 * (msgp.ByteSize))
+	s = 1 + 18 + msgp.ArrayHeaderSize + (32 * (msgp.ByteSize)) + 3 + msgp.ArrayHeaderSize + (64 * (msgp.ByteSize))
 	return
 }
 
 // MsgIsZero returns whether this is a zero value
 func (z *SignatureSecrets) MsgIsZero() bool {
-	return ((*z).SignatureVerifier.MsgIsZero()) && ((*z).SK == (ed25519PrivateKey{}))
+	return ((*z).SignatureVerifier == (PublicKey{})) && ((*z).SK == (ed25519PrivateKey{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func SignatureSecretsMaxSize() (s int) {
+	s = 1 + 18
+	// Calculating size of array: z.SignatureVerifier
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.SK
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -2117,6 +3075,17 @@ func (z *VRFSecrets) MsgIsZero() bool {
 	return ((*z).PK == (VrfPubkey{})) && ((*z).SK == (VrfPrivkey{}))
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func VRFSecretsMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.PK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.SK
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *VrfOutput) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -2154,6 +3123,13 @@ func (z *VrfOutput) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *VrfOutput) MsgIsZero() bool {
 	return (*z) == (VrfOutput{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func VrfOutputMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -2195,6 +3171,13 @@ func (z *VrfPrivkey) MsgIsZero() bool {
 	return (*z) == (VrfPrivkey{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func VrfPrivkeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *VrfProof) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -2232,6 +3215,13 @@ func (z *VrfProof) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *VrfProof) MsgIsZero() bool {
 	return (*z) == (VrfProof{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func VrfProofMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((80) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -2273,6 +3263,13 @@ func (z *VrfPubkey) MsgIsZero() bool {
 	return (*z) == (VrfPubkey{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func VrfPubkeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *ed25519PrivateKey) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -2310,6 +3307,13 @@ func (z *ed25519PrivateKey) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *ed25519PrivateKey) MsgIsZero() bool {
 	return (*z) == (ed25519PrivateKey{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func Ed25519PrivateKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -2351,6 +3355,13 @@ func (z *ed25519PublicKey) MsgIsZero() bool {
 	return (*z) == (ed25519PublicKey{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func Ed25519PublicKeyMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *ed25519Seed) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -2390,6 +3401,13 @@ func (z *ed25519Seed) MsgIsZero() bool {
 	return (*z) == (ed25519Seed{})
 }
 
+// MaxSize returns a maximum valid message size for this message type
+func Ed25519SeedMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	return
+}
+
 // MarshalMsg implements msgp.Marshaler
 func (z *ed25519Signature) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
@@ -2427,6 +3445,13 @@ func (z *ed25519Signature) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *ed25519Signature) MsgIsZero() bool {
 	return (*z) == (ed25519Signature{})
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func Ed25519SignatureMaxSize() (s int) {
+	// Calculating size of array: z
+	s = msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
 
 // MarshalMsg implements msgp.Marshaler
@@ -2572,4 +3597,21 @@ func (z *ephemeralSubkey) Msgsize() (s int) {
 // MsgIsZero returns whether this is a zero value
 func (z *ephemeralSubkey) MsgIsZero() bool {
 	return ((*z).PK == (ed25519PublicKey{})) && ((*z).SK == (ed25519PrivateKey{})) && ((*z).PKSigOld == (ed25519Signature{})) && ((*z).PKSigNew == (ed25519Signature{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func EphemeralSubkeyMaxSize() (s int) {
+	s = 1 + 3
+	// Calculating size of array: z.PK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.SK
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 6
+	// Calculating size of array: z.PKSigOld
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 5
+	// Calculating size of array: z.PKSigNew
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
 }
