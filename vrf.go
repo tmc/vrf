@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025 Algorand, Inc.
+// Copyright (C) 2019-2023 Algorand, Inc.
 // This file is part of go-algorand
 //
 // go-algorand is free software: you can redistribute it and/or modify
@@ -134,11 +134,6 @@ func (pk VrfPubkey) verifyBytes(proof VrfProof, msg []byte) (bool, VrfOutput) {
 	return ret == 0, out
 }
 
-// IsEmpty returns true if the key is empty/zero'd.
-func (pk VrfPubkey) IsEmpty() bool {
-	return pk == VrfPubkey{}
-}
-
 // validateGoVerify is a temporary helper that allows testing both C and Go VRF implementations (this will be removed before this branch is merged).
 var validateGoVerify func(pk VrfPubkey, p VrfProof, message Hashable, ok bool, out VrfOutput)
 
@@ -147,7 +142,7 @@ var validateGoVerify func(pk VrfPubkey, p VrfProof, message Hashable, ok bool, o
 // However, given a public key and message, all valid proofs will yield the same output.
 // Moreover, the output is indistinguishable from random to anyone without the proof or the secret key.
 func (pk VrfPubkey) Verify(p VrfProof, message Hashable) (bool, VrfOutput) {
-	ok, out := pk.verifyBytes(p, hashRep(message))
+	ok, out := pk.verifyBytes(p, HashRep(message))
 	// Temporary addition to enable build tag based setting of an implementation to compare C and Go implementations.
 	if validateGoVerify != nil {
 		validateGoVerify(pk, p, message, ok, out)
