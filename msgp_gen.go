@@ -15,6 +15,7 @@ import (
 //    |-----> (*) MarshalMsg
 //    |-----> (*) CanMarshalMsg
 //    |-----> (*) UnmarshalMsg
+//    |-----> (*) UnmarshalMsgWithState
 //    |-----> (*) CanUnmarshalMsg
 //    |-----> (*) Msgsize
 //    |-----> (*) MsgIsZero
@@ -24,6 +25,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -33,6 +35,7 @@ import (
 //        |-----> (*) MarshalMsg
 //        |-----> (*) CanMarshalMsg
 //        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
@@ -42,6 +45,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -51,6 +55,7 @@ import (
 //        |-----> MarshalMsg
 //        |-----> CanMarshalMsg
 //        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> Msgsize
 //        |-----> MsgIsZero
@@ -60,6 +65,7 @@ import (
 //       |-----> (*) MarshalMsg
 //       |-----> (*) CanMarshalMsg
 //       |-----> (*) UnmarshalMsg
+//       |-----> (*) UnmarshalMsgWithState
 //       |-----> (*) CanUnmarshalMsg
 //       |-----> (*) Msgsize
 //       |-----> (*) MsgIsZero
@@ -69,6 +75,7 @@ import (
 //        |-----> (*) MarshalMsg
 //        |-----> (*) CanMarshalMsg
 //        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
@@ -78,6 +85,7 @@ import (
 //       |-----> MarshalMsg
 //       |-----> CanMarshalMsg
 //       |-----> (*) UnmarshalMsg
+//       |-----> (*) UnmarshalMsgWithState
 //       |-----> (*) CanUnmarshalMsg
 //       |-----> Msgsize
 //       |-----> MsgIsZero
@@ -87,6 +95,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -96,15 +105,27 @@ import (
 //     |-----> MarshalMsg
 //     |-----> CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> Msgsize
 //     |-----> MsgIsZero
 //     |-----> HashTypeMaxSize()
 //
+// HeartbeatProof
+//        |-----> (*) MarshalMsg
+//        |-----> (*) CanMarshalMsg
+//        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
+//        |-----> (*) CanUnmarshalMsg
+//        |-----> (*) Msgsize
+//        |-----> (*) MsgIsZero
+//        |-----> HeartbeatProofMaxSize()
+//
 // MasterDerivationKey
 //          |-----> (*) MarshalMsg
 //          |-----> (*) CanMarshalMsg
 //          |-----> (*) UnmarshalMsg
+//          |-----> (*) UnmarshalMsgWithState
 //          |-----> (*) CanUnmarshalMsg
 //          |-----> (*) Msgsize
 //          |-----> (*) MsgIsZero
@@ -114,6 +135,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -123,6 +145,7 @@ import (
 //        |-----> (*) MarshalMsg
 //        |-----> (*) CanMarshalMsg
 //        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
@@ -132,6 +155,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -141,6 +165,7 @@ import (
 //            |-----> (*) MarshalMsg
 //            |-----> (*) CanMarshalMsg
 //            |-----> (*) UnmarshalMsg
+//            |-----> (*) UnmarshalMsgWithState
 //            |-----> (*) CanUnmarshalMsg
 //            |-----> (*) Msgsize
 //            |-----> (*) MsgIsZero
@@ -150,6 +175,7 @@ import (
 //                 |-----> (*) MarshalMsg
 //                 |-----> (*) CanMarshalMsg
 //                 |-----> (*) UnmarshalMsg
+//                 |-----> (*) UnmarshalMsgWithState
 //                 |-----> (*) CanUnmarshalMsg
 //                 |-----> (*) Msgsize
 //                 |-----> (*) MsgIsZero
@@ -159,6 +185,7 @@ import (
 //               |-----> (*) MarshalMsg
 //               |-----> (*) CanMarshalMsg
 //               |-----> (*) UnmarshalMsg
+//               |-----> (*) UnmarshalMsgWithState
 //               |-----> (*) CanUnmarshalMsg
 //               |-----> (*) Msgsize
 //               |-----> (*) MsgIsZero
@@ -168,6 +195,7 @@ import (
 //                |-----> (*) MarshalMsg
 //                |-----> (*) CanMarshalMsg
 //                |-----> (*) UnmarshalMsg
+//                |-----> (*) UnmarshalMsgWithState
 //                |-----> (*) CanUnmarshalMsg
 //                |-----> (*) Msgsize
 //                |-----> (*) MsgIsZero
@@ -177,6 +205,7 @@ import (
 //             |-----> (*) MarshalMsg
 //             |-----> (*) CanMarshalMsg
 //             |-----> (*) UnmarshalMsg
+//             |-----> (*) UnmarshalMsgWithState
 //             |-----> (*) CanUnmarshalMsg
 //             |-----> (*) Msgsize
 //             |-----> (*) MsgIsZero
@@ -186,6 +215,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -195,6 +225,7 @@ import (
 //     |-----> (*) MarshalMsg
 //     |-----> (*) CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
@@ -204,6 +235,7 @@ import (
 //   |-----> (*) MarshalMsg
 //   |-----> (*) CanMarshalMsg
 //   |-----> (*) UnmarshalMsg
+//   |-----> (*) UnmarshalMsgWithState
 //   |-----> (*) CanUnmarshalMsg
 //   |-----> (*) Msgsize
 //   |-----> (*) MsgIsZero
@@ -213,6 +245,7 @@ import (
 //     |-----> (*) MarshalMsg
 //     |-----> (*) CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
@@ -222,6 +255,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -231,6 +265,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -240,6 +275,7 @@ import (
 //     |-----> (*) MarshalMsg
 //     |-----> (*) CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
@@ -249,6 +285,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -258,6 +295,7 @@ import (
 //     |-----> (*) MarshalMsg
 //     |-----> (*) CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
@@ -267,6 +305,7 @@ import (
 //     |-----> (*) MarshalMsg
 //     |-----> (*) CanMarshalMsg
 //     |-----> (*) UnmarshalMsg
+//     |-----> (*) UnmarshalMsgWithState
 //     |-----> (*) CanUnmarshalMsg
 //     |-----> (*) Msgsize
 //     |-----> (*) MsgIsZero
@@ -276,6 +315,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -285,6 +325,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -294,6 +335,7 @@ import (
 //      |-----> (*) MarshalMsg
 //      |-----> (*) CanMarshalMsg
 //      |-----> (*) UnmarshalMsg
+//      |-----> (*) UnmarshalMsgWithState
 //      |-----> (*) CanUnmarshalMsg
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
@@ -303,6 +345,7 @@ import (
 //         |-----> (*) MarshalMsg
 //         |-----> (*) CanMarshalMsg
 //         |-----> (*) UnmarshalMsg
+//         |-----> (*) UnmarshalMsgWithState
 //         |-----> (*) CanUnmarshalMsg
 //         |-----> (*) Msgsize
 //         |-----> (*) MsgIsZero
@@ -312,6 +355,7 @@ import (
 //        |-----> (*) MarshalMsg
 //        |-----> (*) CanMarshalMsg
 //        |-----> (*) UnmarshalMsg
+//        |-----> (*) UnmarshalMsgWithState
 //        |-----> (*) CanUnmarshalMsg
 //        |-----> (*) Msgsize
 //        |-----> (*) MsgIsZero
@@ -331,7 +375,12 @@ func (_ *Digest) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *Digest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Digest) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -341,6 +390,9 @@ func (z *Digest) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *Digest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *Digest) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*Digest)
 	return ok
@@ -377,7 +429,12 @@ func (_ *FalconPrivateKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconPrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconPrivateKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -387,6 +444,9 @@ func (z *FalconPrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconPrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconPrivateKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconPrivateKey)
 	return ok
@@ -423,7 +483,12 @@ func (_ *FalconPublicKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconPublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconPublicKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -433,6 +498,9 @@ func (z *FalconPublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconPublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconPublicKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconPublicKey)
 	return ok
@@ -469,7 +537,12 @@ func (_ *FalconSeed) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconSeed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconSeed) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -479,6 +552,9 @@ func (z *FalconSeed) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconSeed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconSeed) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconSeed)
 	return ok
@@ -518,7 +594,12 @@ func (_ FalconSignature) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconSignature) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	{
 		var zb0001 []byte
 		var zb0002 int
@@ -542,6 +623,9 @@ func (z *FalconSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconSignature) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconSignature)
 	return ok
@@ -601,7 +685,12 @@ func (_ *FalconSigner) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconSigner) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconSigner) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0003 int
@@ -677,6 +766,9 @@ func (z *FalconSigner) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconSigner) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconSigner) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconSigner)
 	return ok
@@ -732,7 +824,12 @@ func (_ *FalconVerifier) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *FalconVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *FalconVerifier) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0002 int
@@ -794,6 +891,9 @@ func (z *FalconVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *FalconVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *FalconVerifier) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*FalconVerifier)
 	return ok
@@ -834,7 +934,12 @@ func (_ GenericDigest) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *GenericDigest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *GenericDigest) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	{
 		var zb0001 []byte
 		var zb0002 int
@@ -858,6 +963,9 @@ func (z *GenericDigest) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *GenericDigest) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *GenericDigest) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*GenericDigest)
 	return ok
@@ -908,7 +1016,12 @@ func (_ *HashFactory) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *HashFactory) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *HashFactory) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0001 int
@@ -981,6 +1094,9 @@ func (z *HashFactory) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *HashFactory) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *HashFactory) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*HashFactory)
 	return ok
@@ -1019,7 +1135,12 @@ func (_ HashType) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *HashType) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *HashType) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	{
 		var zb0001 uint16
 		zb0001, bts, err = msgp.ReadUint16Bytes(bts)
@@ -1033,6 +1154,9 @@ func (z *HashType) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *HashType) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *HashType) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*HashType)
 	return ok
@@ -1056,6 +1180,232 @@ func HashTypeMaxSize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
+func (z *HeartbeatProof) MarshalMsg(b []byte) (o []byte) {
+	o = msgp.Require(b, z.Msgsize())
+	// omitempty: check for empty values
+	zb0006Len := uint32(5)
+	var zb0006Mask uint8 /* 6 bits */
+	if (*z).PK == (ed25519PublicKey{}) {
+		zb0006Len--
+		zb0006Mask |= 0x2
+	}
+	if (*z).PK1Sig == (ed25519Signature{}) {
+		zb0006Len--
+		zb0006Mask |= 0x4
+	}
+	if (*z).PK2 == (ed25519PublicKey{}) {
+		zb0006Len--
+		zb0006Mask |= 0x8
+	}
+	if (*z).PK2Sig == (ed25519Signature{}) {
+		zb0006Len--
+		zb0006Mask |= 0x10
+	}
+	if (*z).Sig == (ed25519Signature{}) {
+		zb0006Len--
+		zb0006Mask |= 0x20
+	}
+	// variable map header, size zb0006Len
+	o = append(o, 0x80|uint8(zb0006Len))
+	if zb0006Len != 0 {
+		if (zb0006Mask & 0x2) == 0 { // if not empty
+			// string "p"
+			o = append(o, 0xa1, 0x70)
+			o = msgp.AppendBytes(o, ((*z).PK)[:])
+		}
+		if (zb0006Mask & 0x4) == 0 { // if not empty
+			// string "p1s"
+			o = append(o, 0xa3, 0x70, 0x31, 0x73)
+			o = msgp.AppendBytes(o, ((*z).PK1Sig)[:])
+		}
+		if (zb0006Mask & 0x8) == 0 { // if not empty
+			// string "p2"
+			o = append(o, 0xa2, 0x70, 0x32)
+			o = msgp.AppendBytes(o, ((*z).PK2)[:])
+		}
+		if (zb0006Mask & 0x10) == 0 { // if not empty
+			// string "p2s"
+			o = append(o, 0xa3, 0x70, 0x32, 0x73)
+			o = msgp.AppendBytes(o, ((*z).PK2Sig)[:])
+		}
+		if (zb0006Mask & 0x20) == 0 { // if not empty
+			// string "s"
+			o = append(o, 0xa1, 0x73)
+			o = msgp.AppendBytes(o, ((*z).Sig)[:])
+		}
+	}
+	return
+}
+
+func (_ *HeartbeatProof) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*HeartbeatProof)
+	return ok
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *HeartbeatProof) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
+	var field []byte
+	_ = field
+	var zb0006 int
+	var zb0007 bool
+	zb0006, zb0007, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if _, ok := err.(msgp.TypeError); ok {
+		zb0006, zb0007, bts, err = msgp.ReadArrayHeaderBytes(bts)
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0006 > 0 {
+			zb0006--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).Sig)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "Sig")
+				return
+			}
+		}
+		if zb0006 > 0 {
+			zb0006--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PK)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PK")
+				return
+			}
+		}
+		if zb0006 > 0 {
+			zb0006--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PK2)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PK2")
+				return
+			}
+		}
+		if zb0006 > 0 {
+			zb0006--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PK1Sig)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PK1Sig")
+				return
+			}
+		}
+		if zb0006 > 0 {
+			zb0006--
+			bts, err = msgp.ReadExactBytes(bts, ((*z).PK2Sig)[:])
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "PK2Sig")
+				return
+			}
+		}
+		if zb0006 > 0 {
+			err = msgp.ErrTooManyArrayFields(zb0006)
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array")
+				return
+			}
+		}
+	} else {
+		if err != nil {
+			err = msgp.WrapError(err)
+			return
+		}
+		if zb0007 {
+			(*z) = HeartbeatProof{}
+		}
+		for zb0006 > 0 {
+			zb0006--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				err = msgp.WrapError(err)
+				return
+			}
+			switch string(field) {
+			case "s":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).Sig)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "Sig")
+					return
+				}
+			case "p":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PK)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PK")
+					return
+				}
+			case "p2":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PK2)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PK2")
+					return
+				}
+			case "p1s":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PK1Sig)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PK1Sig")
+					return
+				}
+			case "p2s":
+				bts, err = msgp.ReadExactBytes(bts, ((*z).PK2Sig)[:])
+				if err != nil {
+					err = msgp.WrapError(err, "PK2Sig")
+					return
+				}
+			default:
+				err = msgp.ErrNoField(string(field))
+				if err != nil {
+					err = msgp.WrapError(err)
+					return
+				}
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (z *HeartbeatProof) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
+func (_ *HeartbeatProof) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*HeartbeatProof)
+	return ok
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *HeartbeatProof) Msgsize() (s int) {
+	s = 1 + 2 + msgp.ArrayHeaderSize + (64 * (msgp.ByteSize)) + 2 + msgp.ArrayHeaderSize + (32 * (msgp.ByteSize)) + 3 + msgp.ArrayHeaderSize + (32 * (msgp.ByteSize)) + 4 + msgp.ArrayHeaderSize + (64 * (msgp.ByteSize)) + 4 + msgp.ArrayHeaderSize + (64 * (msgp.ByteSize))
+	return
+}
+
+// MsgIsZero returns whether this is a zero value
+func (z *HeartbeatProof) MsgIsZero() bool {
+	return ((*z).Sig == (ed25519Signature{})) && ((*z).PK == (ed25519PublicKey{})) && ((*z).PK2 == (ed25519PublicKey{})) && ((*z).PK1Sig == (ed25519Signature{})) && ((*z).PK2Sig == (ed25519Signature{}))
+}
+
+// MaxSize returns a maximum valid message size for this message type
+func HeartbeatProofMaxSize() (s int) {
+	s = 1 + 2
+	// Calculating size of array: z.Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 2
+	// Calculating size of array: z.PK
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 3
+	// Calculating size of array: z.PK2
+	s += msgp.ArrayHeaderSize + ((32) * (msgp.ByteSize))
+	s += 4
+	// Calculating size of array: z.PK1Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	s += 4
+	// Calculating size of array: z.PK2Sig
+	s += msgp.ArrayHeaderSize + ((64) * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *MasterDerivationKey) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendBytes(o, (*z)[:])
@@ -1068,7 +1418,12 @@ func (_ *MasterDerivationKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *MasterDerivationKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *MasterDerivationKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -1078,6 +1433,9 @@ func (z *MasterDerivationKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *MasterDerivationKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *MasterDerivationKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*MasterDerivationKey)
 	return ok
@@ -1154,7 +1512,12 @@ func (_ *MultisigSig) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *MultisigSig) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *MultisigSig) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0002 int
@@ -1204,7 +1567,7 @@ func (z *MultisigSig) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				(*z).Subsigs = make([]MultisigSubsig, zb0004)
 			}
 			for zb0001 := range (*z).Subsigs {
-				bts, err = (*z).Subsigs[zb0001].UnmarshalMsg(bts)
+				bts, err = (*z).Subsigs[zb0001].UnmarshalMsgWithState(bts, st)
 				if err != nil {
 					err = msgp.WrapError(err, "struct-from-array", "Subsigs", zb0001)
 					return
@@ -1267,7 +1630,7 @@ func (z *MultisigSig) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					(*z).Subsigs = make([]MultisigSubsig, zb0006)
 				}
 				for zb0001 := range (*z).Subsigs {
-					bts, err = (*z).Subsigs[zb0001].UnmarshalMsg(bts)
+					bts, err = (*z).Subsigs[zb0001].UnmarshalMsgWithState(bts, st)
 					if err != nil {
 						err = msgp.WrapError(err, "Subsigs", zb0001)
 						return
@@ -1286,6 +1649,9 @@ func (z *MultisigSig) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *MultisigSig) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *MultisigSig) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*MultisigSig)
 	return ok
@@ -1350,7 +1716,12 @@ func (_ *MultisigSubsig) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *MultisigSubsig) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *MultisigSubsig) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0003 int
@@ -1426,6 +1797,9 @@ func (z *MultisigSubsig) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *MultisigSubsig) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *MultisigSubsig) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*MultisigSubsig)
 	return ok
@@ -1484,7 +1858,12 @@ func (_ *OneTimeSignature) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignature) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0007 int
@@ -1616,6 +1995,9 @@ func (z *OneTimeSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *OneTimeSignature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignature) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignature)
 	return ok
@@ -1751,7 +2133,12 @@ func (_ *OneTimeSignatureSecrets) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignatureSecrets) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0006 int
@@ -1796,7 +2183,7 @@ func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error)
 				(*z).OneTimeSignatureSecretsPersistent.Batches = make([]ephemeralSubkey, zb0008)
 			}
 			for zb0002 := range (*z).OneTimeSignatureSecretsPersistent.Batches {
-				bts, err = (*z).OneTimeSignatureSecretsPersistent.Batches[zb0002].UnmarshalMsg(bts)
+				bts, err = (*z).OneTimeSignatureSecretsPersistent.Batches[zb0002].UnmarshalMsgWithState(bts, st)
 				if err != nil {
 					err = msgp.WrapError(err, "struct-from-array", "Batches", zb0002)
 					return
@@ -1828,7 +2215,7 @@ func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error)
 				(*z).OneTimeSignatureSecretsPersistent.Offsets = make([]ephemeralSubkey, zb0010)
 			}
 			for zb0003 := range (*z).OneTimeSignatureSecretsPersistent.Offsets {
-				bts, err = (*z).OneTimeSignatureSecretsPersistent.Offsets[zb0003].UnmarshalMsg(bts)
+				bts, err = (*z).OneTimeSignatureSecretsPersistent.Offsets[zb0003].UnmarshalMsgWithState(bts, st)
 				if err != nil {
 					err = msgp.WrapError(err, "struct-from-array", "Offsets", zb0003)
 					return
@@ -1902,7 +2289,7 @@ func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error)
 					(*z).OneTimeSignatureSecretsPersistent.Batches = make([]ephemeralSubkey, zb0012)
 				}
 				for zb0002 := range (*z).OneTimeSignatureSecretsPersistent.Batches {
-					bts, err = (*z).OneTimeSignatureSecretsPersistent.Batches[zb0002].UnmarshalMsg(bts)
+					bts, err = (*z).OneTimeSignatureSecretsPersistent.Batches[zb0002].UnmarshalMsgWithState(bts, st)
 					if err != nil {
 						err = msgp.WrapError(err, "Batches", zb0002)
 						return
@@ -1930,7 +2317,7 @@ func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error)
 					(*z).OneTimeSignatureSecretsPersistent.Offsets = make([]ephemeralSubkey, zb0014)
 				}
 				for zb0003 := range (*z).OneTimeSignatureSecretsPersistent.Offsets {
-					bts, err = (*z).OneTimeSignatureSecretsPersistent.Offsets[zb0003].UnmarshalMsg(bts)
+					bts, err = (*z).OneTimeSignatureSecretsPersistent.Offsets[zb0003].UnmarshalMsgWithState(bts, st)
 					if err != nil {
 						err = msgp.WrapError(err, "Offsets", zb0003)
 						return
@@ -1961,6 +2348,9 @@ func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error)
 	return
 }
 
+func (z *OneTimeSignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignatureSecrets) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignatureSecrets)
 	return ok
@@ -2101,7 +2491,12 @@ func (_ *OneTimeSignatureSecretsPersistent) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0006 int
@@ -2146,7 +2541,7 @@ func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, 
 				(*z).Batches = make([]ephemeralSubkey, zb0008)
 			}
 			for zb0002 := range (*z).Batches {
-				bts, err = (*z).Batches[zb0002].UnmarshalMsg(bts)
+				bts, err = (*z).Batches[zb0002].UnmarshalMsgWithState(bts, st)
 				if err != nil {
 					err = msgp.WrapError(err, "struct-from-array", "Batches", zb0002)
 					return
@@ -2178,7 +2573,7 @@ func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, 
 				(*z).Offsets = make([]ephemeralSubkey, zb0010)
 			}
 			for zb0003 := range (*z).Offsets {
-				bts, err = (*z).Offsets[zb0003].UnmarshalMsg(bts)
+				bts, err = (*z).Offsets[zb0003].UnmarshalMsgWithState(bts, st)
 				if err != nil {
 					err = msgp.WrapError(err, "struct-from-array", "Offsets", zb0003)
 					return
@@ -2252,7 +2647,7 @@ func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, 
 					(*z).Batches = make([]ephemeralSubkey, zb0012)
 				}
 				for zb0002 := range (*z).Batches {
-					bts, err = (*z).Batches[zb0002].UnmarshalMsg(bts)
+					bts, err = (*z).Batches[zb0002].UnmarshalMsgWithState(bts, st)
 					if err != nil {
 						err = msgp.WrapError(err, "Batches", zb0002)
 						return
@@ -2280,7 +2675,7 @@ func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, 
 					(*z).Offsets = make([]ephemeralSubkey, zb0014)
 				}
 				for zb0003 := range (*z).Offsets {
-					bts, err = (*z).Offsets[zb0003].UnmarshalMsg(bts)
+					bts, err = (*z).Offsets[zb0003].UnmarshalMsgWithState(bts, st)
 					if err != nil {
 						err = msgp.WrapError(err, "Offsets", zb0003)
 						return
@@ -2311,6 +2706,9 @@ func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, 
 	return
 }
 
+func (z *OneTimeSignatureSecretsPersistent) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignatureSecretsPersistent) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignatureSecretsPersistent)
 	return ok
@@ -2374,7 +2772,12 @@ func (_ *OneTimeSignatureSubkeyBatchID) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignatureSubkeyBatchID) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignatureSubkeyBatchID) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0002 int
@@ -2450,6 +2853,9 @@ func (z *OneTimeSignatureSubkeyBatchID) UnmarshalMsg(bts []byte) (o []byte, err 
 	return
 }
 
+func (z *OneTimeSignatureSubkeyBatchID) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignatureSubkeyBatchID) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignatureSubkeyBatchID)
 	return ok
@@ -2497,7 +2903,12 @@ func (_ *OneTimeSignatureSubkeyOffsetID) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignatureSubkeyOffsetID) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignatureSubkeyOffsetID) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0002 int
@@ -2587,6 +2998,9 @@ func (z *OneTimeSignatureSubkeyOffsetID) UnmarshalMsg(bts []byte) (o []byte, err
 	return
 }
 
+func (z *OneTimeSignatureSubkeyOffsetID) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignatureSubkeyOffsetID) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignatureSubkeyOffsetID)
 	return ok
@@ -2625,7 +3039,12 @@ func (_ *OneTimeSignatureVerifier) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *OneTimeSignatureVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *OneTimeSignatureVerifier) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -2635,6 +3054,9 @@ func (z *OneTimeSignatureVerifier) UnmarshalMsg(bts []byte) (o []byte, err error
 	return
 }
 
+func (z *OneTimeSignatureVerifier) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *OneTimeSignatureVerifier) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*OneTimeSignatureVerifier)
 	return ok
@@ -2671,7 +3093,12 @@ func (_ *PrivateKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *PrivateKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -2681,6 +3108,9 @@ func (z *PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *PrivateKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*PrivateKey)
 	return ok
@@ -2717,7 +3147,12 @@ func (_ *PublicKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *PublicKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -2727,6 +3162,9 @@ func (z *PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *PublicKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*PublicKey)
 	return ok
@@ -2763,7 +3201,12 @@ func (_ *Seed) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Seed) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -2773,6 +3216,9 @@ func (z *Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *Seed) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*Seed)
 	return ok
@@ -2809,7 +3255,12 @@ func (_ *Signature) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *Signature) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -2819,6 +3270,9 @@ func (z *Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *Signature) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*Signature)
 	return ok
@@ -2861,7 +3315,12 @@ func (_ *SignatureSecrets) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *SignatureSecrets) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0003 int
@@ -2937,6 +3396,9 @@ func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *SignatureSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *SignatureSecrets) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*SignatureSecrets)
 	return ok
@@ -2983,7 +3445,12 @@ func (_ *VRFSecrets) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *VRFSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *VRFSecrets) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0003 int
@@ -3059,6 +3526,9 @@ func (z *VRFSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *VRFSecrets) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *VRFSecrets) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*VRFSecrets)
 	return ok
@@ -3099,7 +3569,12 @@ func (_ *VrfOutput) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *VrfOutput) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *VrfOutput) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3109,6 +3584,9 @@ func (z *VrfOutput) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *VrfOutput) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *VrfOutput) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*VrfOutput)
 	return ok
@@ -3145,7 +3623,12 @@ func (_ *VrfPrivkey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *VrfPrivkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *VrfPrivkey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3155,6 +3638,9 @@ func (z *VrfPrivkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *VrfPrivkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *VrfPrivkey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*VrfPrivkey)
 	return ok
@@ -3191,7 +3677,12 @@ func (_ *VrfProof) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *VrfProof) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *VrfProof) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3201,6 +3692,9 @@ func (z *VrfProof) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *VrfProof) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *VrfProof) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*VrfProof)
 	return ok
@@ -3237,7 +3731,12 @@ func (_ *VrfPubkey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *VrfPubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *VrfPubkey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3247,6 +3746,9 @@ func (z *VrfPubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *VrfPubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *VrfPubkey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*VrfPubkey)
 	return ok
@@ -3283,7 +3785,12 @@ func (_ *ed25519PrivateKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ed25519PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ed25519PrivateKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3293,6 +3800,9 @@ func (z *ed25519PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *ed25519PrivateKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *ed25519PrivateKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*ed25519PrivateKey)
 	return ok
@@ -3329,7 +3839,12 @@ func (_ *ed25519PublicKey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ed25519PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ed25519PublicKey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3339,6 +3854,9 @@ func (z *ed25519PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *ed25519PublicKey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *ed25519PublicKey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*ed25519PublicKey)
 	return ok
@@ -3375,7 +3893,12 @@ func (_ *ed25519Seed) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ed25519Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ed25519Seed) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3385,6 +3908,9 @@ func (z *ed25519Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *ed25519Seed) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *ed25519Seed) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*ed25519Seed)
 	return ok
@@ -3421,7 +3947,12 @@ func (_ *ed25519Signature) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ed25519Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ed25519Signature) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	bts, err = msgp.ReadExactBytes(bts, (*z)[:])
 	if err != nil {
 		err = msgp.WrapError(err)
@@ -3431,6 +3962,9 @@ func (z *ed25519Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *ed25519Signature) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *ed25519Signature) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*ed25519Signature)
 	return ok
@@ -3479,7 +4013,12 @@ func (_ *ephemeralSubkey) CanMarshalMsg(z interface{}) bool {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *ephemeralSubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *ephemeralSubkey) UnmarshalMsgWithState(bts []byte, st msgp.UnmarshalState) (o []byte, err error) {
+	if st.AllowableDepth == 0 {
+		err = msgp.ErrMaxDepthExceeded{}
+		return
+	}
+	st.AllowableDepth--
 	var field []byte
 	_ = field
 	var zb0005 int
@@ -3583,6 +4122,9 @@ func (z *ephemeralSubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+func (z *ephemeralSubkey) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	return z.UnmarshalMsgWithState(bts, msgp.DefaultUnmarshalState)
+}
 func (_ *ephemeralSubkey) CanUnmarshalMsg(z interface{}) bool {
 	_, ok := (z).(*ephemeralSubkey)
 	return ok
