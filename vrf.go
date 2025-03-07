@@ -17,16 +17,18 @@
 package crypto
 
 // #cgo CFLAGS: -Wall -std=c99
-// #cgo darwin,amd64 CFLAGS: -I${SRCDIR}/libs/darwin/amd64/include
-// #cgo darwin,amd64 LDFLAGS: ${SRCDIR}/libs/darwin/amd64/lib/libsodium.a
-// #cgo linux,amd64 CFLAGS: -I${SRCDIR}/libs/linux/amd64/include
-// #cgo linux,amd64 LDFLAGS: ${SRCDIR}/libs/linux/amd64/lib/libsodium.a
-// #cgo linux,arm64 CFLAGS: -I${SRCDIR}/libs/linux/arm64/include
-// #cgo linux,arm64 LDFLAGS: ${SRCDIR}/libs/linux/arm64/lib/libsodium.a
-// #cgo linux,arm CFLAGS: -I${SRCDIR}/libs/linux/arm/include
-// #cgo linux,arm LDFLAGS: ${SRCDIR}/libs/linux/arm/lib/libsodium.a
-// #cgo windows,amd64 CFLAGS: -I${SRCDIR}/libs/windows/amd64/include
-// #cgo windows,amd64 LDFLAGS: ${SRCDIR}/libs/windows/amd64/lib/libsodium.a
+// #cgo darwin,amd64 CFLAGS: -I${SRCDIR}/../libs/darwin/amd64/include
+// #cgo darwin,amd64 LDFLAGS: ${SRCDIR}/../libs/darwin/amd64/lib/libsodium.a
+// #cgo darwin,arm64 CFLAGS: -I${SRCDIR}/../libs/darwin/arm64/include
+// #cgo darwin,arm64 LDFLAGS: ${SRCDIR}/../libs/darwin/arm64/lib/libsodium.a
+// #cgo linux,amd64 CFLAGS: -I${SRCDIR}/../libs/linux/amd64/include
+// #cgo linux,amd64 LDFLAGS: ${SRCDIR}/../libs/linux/amd64/lib/libsodium.a
+// #cgo linux,arm64 CFLAGS: -I${SRCDIR}/../libs/linux/arm64/include
+// #cgo linux,arm64 LDFLAGS: ${SRCDIR}/../libs/linux/arm64/lib/libsodium.a
+// #cgo linux,arm CFLAGS: -I${SRCDIR}/../libs/linux/arm/include
+// #cgo linux,arm LDFLAGS: ${SRCDIR}/../libs/linux/arm/lib/libsodium.a
+// #cgo windows,amd64 CFLAGS: -I${SRCDIR}/../libs/windows/amd64/include
+// #cgo windows,amd64 LDFLAGS: ${SRCDIR}/../libs/windows/amd64/lib/libsodium.a
 // #include <stdint.h>
 // #include "sodium.h"
 import "C"
@@ -42,11 +44,6 @@ func init() {
 // VRFVerifier is a deprecated name for VrfPubkey
 type VRFVerifier = VrfPubkey
 
-// VRFVerifierMaxSize forwards to base implementation since it's expected by the msgp generated MaxSize functions
-func VRFVerifierMaxSize() int {
-	return VrfPubkeyMaxSize()
-}
-
 // VRFProof is a deprecated name for VrfProof
 type VRFProof = VrfProof
 
@@ -56,13 +53,6 @@ type VRFSecrets struct {
 
 	PK VrfPubkey
 	SK VrfPrivkey
-}
-
-// GenerateVRFSecrets is deprecated, use VrfKeygen or VrfKeygenFromSeed instead
-func GenerateVRFSecrets() *VRFSecrets {
-	s := new(VRFSecrets)
-	s.PK, s.SK = VrfKeygen()
-	return s
 }
 
 // TODO: Go arrays are copied by value, so any call to e.g. VrfPrivkey.Prove() makes a copy of the secret key that lingers in memory.
