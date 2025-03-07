@@ -7,20 +7,11 @@ require (
 	github.com/algorand/falcon v0.1.0
 	github.com/algorand/go-deadlock v0.2.2
 	github.com/algorand/go-sumhash v0.1.0
-	github.com/algorand/msgp v1.1.60
+	github.com/algorand/msgp v1.1.55
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.11.0
-)
-
-require (
-	github.com/daixiang0/gci v0.3.2 // indirect
-	github.com/hexops/gotextdiff v1.0.3 // indirect
-	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31 // indirect
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/tools v0.11.0 // indirect
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 )
 
 require (
