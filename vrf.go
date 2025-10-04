@@ -1,141 +1,546 @@
-// Copyright (C) 2019-2023 Algorand, Inc.
-// This file is part of go-algorand
+// Package vrf implements ECVRF-EDWARDS25519-SHA512-ELL2 (ciphersuite 0x04) 
+// from RFC 9381: Verifiable Random Functions (VRFs)
 //
-// go-algorand is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as
-// published by the Free Software Foundation, either version 3 of the
-// License, or (at your option) any later version.
-//
-// go-algorand is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
+// This is a clean implementation separated from Algorand's go-algorand codebase.
+package vrf
 
-package crypto
+import (
+	"crypto/sha512"
+	"crypto/subtle"
+	"fmt"
+	"math/big"
 
-// #cgo CFLAGS: -Wall -std=c99
-// #cgo darwin,amd64 CFLAGS: -I${SRCDIR}/../libs/darwin/amd64/include
-// #cgo darwin,amd64 LDFLAGS: ${SRCDIR}/../libs/darwin/amd64/lib/libsodium.a
-// #cgo darwin,arm64 CFLAGS: -I${SRCDIR}/../libs/darwin/arm64/include
-// #cgo darwin,arm64 LDFLAGS: ${SRCDIR}/../libs/darwin/arm64/lib/libsodium.a
-// #cgo linux,amd64 CFLAGS: -I${SRCDIR}/../libs/linux/amd64/include
-// #cgo linux,amd64 LDFLAGS: ${SRCDIR}/../libs/linux/amd64/lib/libsodium.a
-// #cgo linux,arm64 CFLAGS: -I${SRCDIR}/../libs/linux/arm64/include
-// #cgo linux,arm64 LDFLAGS: ${SRCDIR}/../libs/linux/arm64/lib/libsodium.a
-// #cgo linux,arm CFLAGS: -I${SRCDIR}/../libs/linux/arm/include
-// #cgo linux,arm LDFLAGS: ${SRCDIR}/../libs/linux/arm/lib/libsodium.a
-// #cgo windows,amd64 CFLAGS: -I${SRCDIR}/../libs/windows/amd64/include
-// #cgo windows,amd64 LDFLAGS: ${SRCDIR}/../libs/windows/amd64/lib/libsodium.a
-// #include <stdint.h>
-// #include "sodium.h"
-import "C"
-
-func init() {
-	if C.sodium_init() == -1 {
-		panic("sodium_init() failed")
-	}
-}
-
-// deprecated names + wrappers -- TODO remove
-
-// VRFVerifier is a deprecated name for VrfPubkey
-type VRFVerifier = VrfPubkey
-
-// VRFProof is a deprecated name for VrfProof
-type VRFProof = VrfProof
-
-// VRFSecrets is a wrapper for a VRF keypair. Use *VrfPrivkey instead
-type VRFSecrets struct {
-	_struct struct{} `codec:""`
-
-	PK VrfPubkey
-	SK VrfPrivkey
-}
-
-// TODO: Go arrays are copied by value, so any call to e.g. VrfPrivkey.Prove() makes a copy of the secret key that lingers in memory.
-// To avoid this, should we instead allocate memory for secret keys here (maybe even in the C heap) and pass around pointers?
-// e.g., allocate a privkey with sodium_malloc and have VrfPrivkey be of type unsafe.Pointer?
-type (
-	// A VrfPrivkey is a private key used for producing VRF proofs.
-	// Specifically, we use a 64-byte ed25519 private key (the latter 32-bytes are the precomputed public key)
-	VrfPrivkey [64]byte
-	// A VrfPubkey is a public key that can be used to verify VRF proofs.
-	VrfPubkey [32]byte
-	// A VrfProof for a message can be generated with a secret key and verified against a public key, like a signature.
-	// Proofs are malleable, however, for a given message and public key, the VRF output that can be computed from a proof is unique.
-	VrfProof [80]byte
-	// VrfOutput is a 64-byte pseudorandom value that can be computed from a VrfProof.
-	// The VRF scheme guarantees that such output will be unique
-	VrfOutput [64]byte
+	"filippo.io/edwards25519"
+	"filippo.io/edwards25519/field"
 )
 
-// VrfKeygenFromSeed deterministically generates a VRF keypair from 32 bytes of (secret) entropy.
-func VrfKeygenFromSeed(seed [32]byte) (pub VrfPubkey, priv VrfPrivkey) {
-	C.crypto_vrf_keypair_from_seed((*C.uchar)(&pub[0]), (*C.uchar)(&priv[0]), (*C.uchar)(&seed[0]))
-	return pub, priv
+const (
+	// PublicKeySize is the size of a VRF public key in bytes
+	PublicKeySize = 32
+	// PrivateKeySize is the size of a VRF private key in bytes  
+	PrivateKeySize = 64
+	// ProofSize is the size of a VRF proof in bytes
+	ProofSize = 80
+	// OutputSize is the size of VRF output in bytes
+	OutputSize = 64
+
+	// vrfSuite identifies ECVRF-EDWARDS25519-SHA512-ELL2 ciphersuite
+	vrfSuite = 0x04
+)
+
+// PublicKey represents a VRF public key
+type PublicKey [PublicKeySize]byte
+
+// PrivateKey represents a VRF private key (32-byte seed + 32-byte public key)
+type PrivateKey [PrivateKeySize]byte
+
+// Proof represents a VRF proof
+type Proof [ProofSize]byte
+
+// Output represents VRF output hash
+type Output [OutputSize]byte
+
+// Keygen generates a VRF key pair from a 32-byte seed
+func Keygen(seed [32]byte) (PublicKey, PrivateKey) {
+	var pk PublicKey
+	var sk PrivateKey
+	
+	h := sha512.New()
+	h.Write(seed[:])
+	hSum := h.Sum(nil)
+	
+	p := edwards25519.NewScalar()
+	p.SetBytesWithClamping(hSum[:32])
+	
+	A := edwards25519.NewIdentityPoint().ScalarBaseMult(p)
+	copy(pk[:], A.Bytes())
+	copy(sk[:], seed[:])
+	copy(sk[32:], pk[:])
+	
+	return pk, sk
 }
 
-// VrfKeygen generates a random VRF keypair.
-func VrfKeygen() (pub VrfPubkey, priv VrfPrivkey) {
-	C.crypto_vrf_keypair((*C.uchar)(&pub[0]), (*C.uchar)(&priv[0]))
-	return pub, priv
-}
-
-// Pubkey returns the public key that corresponds to the given private key.
-func (sk VrfPrivkey) Pubkey() (pk VrfPubkey) {
-	C.crypto_vrf_sk_to_pk((*C.uchar)(&pk[0]), (*C.uchar)(&sk[0]))
-	return pk
-}
-
-func (sk VrfPrivkey) proveBytes(msg []byte) (proof VrfProof, ok bool) {
-	// &msg[0] will make Go panic if msg is zero length
-	m := (*C.uchar)(C.NULL)
-	if len(msg) != 0 {
-		m = (*C.uchar)(&msg[0])
+// Prove generates a VRF proof for the given message
+func (sk PrivateKey) Prove(message []byte) (Proof, error) {
+	Y, xScalar, truncHashedSk, err := sk.expand()
+	if err != nil {
+		return Proof{}, err
 	}
-	ret := C.crypto_vrf_prove((*C.uchar)(&proof[0]), (*C.uchar)(&sk[0]), (*C.uchar)(m), (C.ulonglong)(len(msg)))
-	return proof, ret == 0
+	
+	return vrfProve(Y, xScalar, truncHashedSk, message)
 }
 
-// Prove constructs a VRF Proof for a given Hashable.
-// ok will be false if the private key is malformed.
-func (sk VrfPrivkey) Prove(message Hashable) (proof VrfProof, ok bool) {
-	return sk.proveBytes(HashRep(message))
-}
-
-// Hash converts a VRF proof to a VRF output without verifying the proof.
-// TODO: Consider removing so that we don't accidentally hash an unverified proof
-func (proof VrfProof) Hash() (hash VrfOutput, ok bool) {
-	ret := C.crypto_vrf_proof_to_hash((*C.uchar)(&hash[0]), (*C.uchar)(&proof[0]))
-	return hash, ret == 0
-}
-
-func (pk VrfPubkey) verifyBytes(proof VrfProof, msg []byte) (bool, VrfOutput) {
-	var out VrfOutput
-	// &msg[0] will make Go panic if msg is zero length
-	m := (*C.uchar)(C.NULL)
-	if len(msg) != 0 {
-		m = (*C.uchar)(&msg[0])
+// Verify verifies a VRF proof and returns the VRF output if valid
+func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
+	var out Output
+	
+	hash, err := vrfVerifyAndHash(pk[:], proof[:], message)
+	if err != nil {
+		return out, err
 	}
-	ret := C.crypto_vrf_verify((*C.uchar)(&out[0]), (*C.uchar)(&pk[0]), (*C.uchar)(&proof[0]), (*C.uchar)(m), (C.ulonglong)(len(msg)))
-	return ret == 0, out
+	
+	copy(out[:], hash)
+	return out, nil
 }
 
-// validateGoVerify is a temporary helper that allows testing both C and Go VRF implementations (this will be removed before this branch is merged).
-var validateGoVerify func(pk VrfPubkey, p VrfProof, message Hashable, ok bool, out VrfOutput)
-
-// Verify checks a VRF proof of a given Hashable. If the proof is valid the pseudorandom VrfOutput will be returned.
-// For a given public key and message, there are potentially multiple valid proofs.
-// However, given a public key and message, all valid proofs will yield the same output.
-// Moreover, the output is indistinguishable from random to anyone without the proof or the secret key.
-func (pk VrfPubkey) Verify(p VrfProof, message Hashable) (bool, VrfOutput) {
-	ok, out := pk.verifyBytes(p, HashRep(message))
-	// Temporary addition to enable build tag based setting of an implementation to compare C and Go implementations.
-	if validateGoVerify != nil {
-		validateGoVerify(pk, p, message, ok, out)
+// expand converts a private key into the public point Y, private scalar x, 
+// and truncated hash for nonce generation
+func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte, error) {
+	h := sha512.New()
+	h.Write(sk[:32])
+	hSum := h.Sum(nil)
+	
+	xScalar := edwards25519.NewScalar()
+	xScalar.SetBytesWithClamping(hSum[:32])
+	
+	truncHashedSk := hSum[32:]
+	
+	Y := edwards25519.NewIdentityPoint()
+	if _, err := Y.SetBytes(sk[32:]); err != nil {
+		return nil, nil, nil, err
 	}
-	return ok, out
+	
+	return Y, xScalar, truncHashedSk, nil
+}
+
+// vrfVerifyAndHash verifies a VRF proof and returns the output hash
+func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) ([]byte, error) {
+	Y := &edwards25519.Point{}
+	if _, err := Y.SetBytes(pk); err != nil {
+		return nil, fmt.Errorf("invalid public key: %w", err)
+	}
+	
+	// Check if public key has small order
+	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(edwards25519.NewIdentityPoint()) == 1
+	if isSmallOrder {
+		return nil, fmt.Errorf("public key is a small order point")
+	}
+	
+	// Verify the proof
+	ok, err := vrfVerify(Y, proof, message)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("proof verification failed")
+	}
+	
+	// Convert proof to hash
+	return proofToHash(proof)
+}
+
+// vrfProve constructs a VRF proof for a message
+func vrfProve(Y *edwards25519.Point, xScalar *edwards25519.Scalar, truncHashedSk []byte, message []byte) (Proof, error) {
+	var proof Proof
+	
+	// Hash message to curve point
+	H, err := hashToCurve(Y, message)
+	if err != nil {
+		return Proof{}, err
+	}
+	
+	// Gamma = x * H
+	Gamma := new(edwards25519.Point).ScalarMult(xScalar, H)
+	
+	// Generate nonce
+	k := nonceGeneration(truncHashedSk, H)
+	
+	// kB = k * B (base point)
+	kB := edwards25519.NewIdentityPoint().ScalarBaseMult(k)
+	
+	// kH = k * H
+	kH := edwards25519.NewIdentityPoint().ScalarMult(k, H)
+
+	// c = hash_points(Y, H, Gamma, kB, kH)
+	c := hashPoints(Y, H, Gamma, kB, kH)
+	
+	// s = c*x + k (mod q)
+	s := edwards25519.NewScalar()
+	s.MultiplyAdd(c, xScalar, k)
+	
+	// Encode proof as Gamma || c (16 bytes) || s
+	copy(proof[:], Gamma.Bytes())
+	copy(proof[32:], c.Bytes()[:16])
+	copy(proof[48:], s.Bytes())
+	
+	return proof, nil
+}
+
+// hashToCurve hashes a message to a curve point using edwards25519_XMD:SHA-512_ELL2_NU_
+func hashToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
+	// Build DST: "ECVRF_" || "edwards25519_XMD:SHA-512_ELL2_NU_" || suite_string
+	dst := []byte("ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_")
+	dst = append(dst, vrfSuite)
+
+	// string_to_be_hashed = encode_to_curve_salt || alpha_string
+	// where encode_to_curve_salt = PK_string for this ciphersuite
+	stringToHash := append(Y.Bytes(), message...)
+
+	// expand_message_xmd to get uniform bytes (48 bytes for edwards25519)
+	uniformBytes := expandMessageXMD(stringToHash, dst, 48)
+
+	// Apply elligator2 to map to curve point (using all 48 bytes)
+	hBytes, err := elligator2(uniformBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &edwards25519.Point{}
+	if _, err := result.SetBytes(hBytes); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// expandMessageXMD implements expand_message_xmd from RFC 9380 Section 5.3.1
+func expandMessageXMD(msg, dst []byte, lenInBytes int) []byte {
+	h := sha512.New()
+	bLen := h.Size() // 64 for SHA-512
+	ell := (lenInBytes + bLen - 1) / bLen
+
+	// DST_prime = DST || I2OSP(len(DST), 1)
+	dstPrime := append(dst, byte(len(dst)))
+
+	// Z_pad = I2OSP(0, r_in_bytes) where r_in_bytes = h.BlockSize()
+	zPad := make([]byte, h.BlockSize())
+
+	// b_0 = H(Z_pad || msg || I2OSP(len_in_bytes, 2) || I2OSP(0, 1) || DST_prime)
+	h.Reset()
+	h.Write(zPad)
+	h.Write(msg)
+	h.Write([]byte{byte(lenInBytes >> 8), byte(lenInBytes)})
+	h.Write([]byte{0})
+	h.Write(dstPrime)
+	b0 := h.Sum(nil)
+
+	// b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
+	h.Reset()
+	h.Write(b0)
+	h.Write([]byte{1})
+	h.Write(dstPrime)
+	b1 := h.Sum(nil)
+
+	uniformBytes := make([]byte, 0, lenInBytes)
+	uniformBytes = append(uniformBytes, b1...)
+
+	bi := make([]byte, bLen)
+	copy(bi, b1)
+
+	for i := 2; i <= ell; i++ {
+		// b_i = H(strxor(b_0, b_(i-1)) || I2OSP(i, 1) || DST_prime)
+		h.Reset()
+
+		strxor := make([]byte, bLen)
+		for j := 0; j < bLen; j++ {
+			strxor[j] = b0[j] ^ bi[j]
+		}
+
+		h.Write(strxor)
+		h.Write([]byte{byte(i)})
+		h.Write(dstPrime)
+		bi = h.Sum(nil)
+
+		uniformBytes = append(uniformBytes, bi...)
+	}
+
+	return uniformBytes[:lenInBytes]
+}
+
+// reverseBytes reverses a byte slice
+func reverseBytes(b []byte) []byte {
+	r := make([]byte, len(b))
+	for i := range b {
+		r[i] = b[len(b)-1-i]
+	}
+	return r
+}
+
+// elligator2 implements the Elligator2 map from uniform bytes to Edwards25519 point
+func elligator2(uniformBytes []byte) ([]byte, error) {
+	if len(uniformBytes) != 48 {
+		return nil, fmt.Errorf("elligator2: expected 48 bytes, got %d", len(uniformBytes))
+	}
+
+	// Reduce 48 bytes to field element mod p
+	// p = 2^255 - 19 for edwards25519
+	p := new(big.Int)
+	p.SetString("57896044618658097711785492504343953926634992332820282019728792003956564819949", 10)
+
+	// Interpret uniform_bytes as big-endian integer (OS2IP from RFC 8017)
+	rInt := new(big.Int).SetBytes(uniformBytes)
+
+	// Reduce mod p
+	rInt.Mod(rInt, p)
+
+	// Convert back to 32 bytes in little-endian for field element
+	rBigEndian := make([]byte, 32)
+	rBytes := rInt.Bytes()
+	copy(rBigEndian[32-len(rBytes):], rBytes) // right-align in big-endian
+
+	s := reverseBytes(rBigEndian) // convert to little-endian for edwards25519
+
+	xSign := s[31] & 0x80
+	s[31] &= 0x7f
+
+	r := &field.Element{}
+	r.SetBytes(s)
+
+	one := new(field.Element).One()
+
+	// rr2 = 1 / (2*r^2 + 1)
+	rr2 := &field.Element{}
+	rr2.Square(r)    // r^2
+	rr2.Add(rr2, rr2) // 2*r^2
+	rr2.Add(rr2, one) // 2*r^2 + 1
+	rr2.Invert(rr2)   // 1 / (2*r^2 + 1)
+	
+	// x = -A * rr2
+	const curve25519A = 486662
+	curve25519AElement := new(field.Element).Mult32(one, curve25519A)
+	
+	x := &field.Element{}
+	x.Mult32(rr2, curve25519A)
+	x.Negate(x)
+	
+	// Compute x^2 and x^3
+	x2 := &field.Element{}
+	x2.Multiply(x, x)
+	x3 := &field.Element{}
+	x3.Multiply(x, x2)
+	
+	// e = x^3 + A*x^2 + x
+	e := &field.Element{}
+	e.Add(x3, x)
+	x2.Mult32(x2, curve25519A)
+	e.Add(x2, e)
+	
+	// Check if e is a quadratic residue
+	e = chi25519(e)
+	eBytes := e.Bytes()
+	
+	eIsMinus1 := int(eBytes[1] & 1)
+	eIsNotMinus1 := eIsMinus1 ^ 1
+	
+	negx := new(field.Element).Negate(x)
+	x.Select(x, negx, eIsNotMinus1)
+	
+	x2.Zero()
+	x2.Select(x2, curve25519AElement, eIsNotMinus1)
+	x.Subtract(x, x2)
+	
+	// Convert to Edwards coordinates: yed = (x-1)/(x+1)
+	xPlusOne := new(field.Element).Add(x, one)
+	xMinusOne := new(field.Element).Subtract(x, one)
+	xPlusOneInv := new(field.Element).Invert(xPlusOne)
+	yed := new(field.Element).Multiply(xMinusOne, xPlusOneInv)
+
+	sOut := yed.Bytes()
+	sOut[31] |= xSign
+	
+	// Decode as Edwards point and multiply by cofactor
+	p3 := &edwards25519.Point{}
+	if _, err := p3.SetBytes(sOut); err != nil {
+		return nil, err
+	}
+
+	p3.MultByCofactor(p3)
+	return p3.Bytes(), nil
+}
+
+// nonceGeneration generates a deterministic nonce for VRF proving
+func nonceGeneration(truncHashedSk []byte, H *edwards25519.Point) *edwards25519.Scalar {
+	h := sha512.New()
+	h.Write(truncHashedSk)
+	h.Write(H.Bytes())
+	
+	kBytes := h.Sum(nil)
+	k := edwards25519.NewScalar()
+	k.SetUniformBytes(kBytes)
+	
+	return k
+}
+
+// hashPoints hashes five points to produce a scalar challenge
+func hashPoints(P1, P2, P3, P4, P5 *edwards25519.Point) *edwards25519.Scalar {
+	var input [2 + 32*5]byte
+
+	input[0] = vrfSuite
+	input[1] = 0x02
+	copy(input[2:], P1.Bytes())
+	copy(input[34:], P2.Bytes())
+	copy(input[66:], P3.Bytes())
+	copy(input[98:], P4.Bytes())
+	copy(input[130:], P5.Bytes())
+
+	h := sha512.New()
+	h.Write(input[:])
+	sum := h.Sum(nil)
+	
+	// Use first 16 bytes as 32-byte scalar (zero-padded)
+	result := make([]byte, 32)
+	copy(result, sum[:16])
+	
+	scalar := edwards25519.NewScalar()
+	if _, err := scalar.SetCanonicalBytes(result); err != nil {
+		panic("invalid scalar from hash")
+	}
+	
+	return scalar
+}
+
+// chi25519 computes the Legendre symbol for field elements (quadratic residue test)
+func chi25519(z *field.Element) *field.Element {
+	out := &field.Element{}
+	out.Set(z)
+	
+	var t0, t1, t2, t3 *field.Element
+	
+	t0 = &field.Element{}
+	t1 = &field.Element{}
+	t2 = &field.Element{}
+	t3 = &field.Element{}
+	
+	t0.Square(z)
+	t1.Multiply(t0, z)
+	t0.Square(t1)
+	t2.Square(t0)
+	t2.Square(t2)
+	t2.Multiply(t2, t0)
+	t1.Multiply(t2, z)
+	t2.Square(t1)
+	
+	for i := 1; i < 5; i++ {
+		t2.Square(t2)
+	}
+	t1.Multiply(t2, t1)
+	t2.Square(t1)
+	
+	for i := 1; i < 10; i++ {
+		t2.Square(t2)
+	}
+	t2.Multiply(t2, t1)
+	t3.Square(t2)
+	
+	for i := 1; i < 20; i++ {
+		t3.Square(t3)
+	}
+	t2.Multiply(t3, t2)
+	t2.Square(t2)
+	
+	for i := 1; i < 10; i++ {
+		t2.Square(t2)
+	}
+	t1.Multiply(t2, t1)
+	t2.Square(t1)
+	
+	for i := 1; i < 50; i++ {
+		t2.Square(t2)
+	}
+	t2.Multiply(t2, t1)
+	t3.Square(t2)
+	
+	for i := 1; i < 100; i++ {
+		t3.Square(t3)
+	}
+	t2.Multiply(t3, t2)
+	t2.Square(t2)
+	
+	for i := 1; i < 50; i++ {
+		t2.Square(t2)
+	}
+	t1.Multiply(t2, t1)
+	t1.Square(t1)
+	
+	for i := 1; i < 4; i++ {
+		t1.Square(t1)
+	}
+	out.Multiply(t1, t0)
+	
+	return out
+}
+
+// vrfVerify verifies a VRF proof
+func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
+	// Decode proof
+	Gamma, cBytes, sBytes, err := decodeProof(pi)
+	if err != nil {
+		return false, err
+	}
+	
+	// Hash message to curve
+	H, err := hashToCurve(Y, message)
+	if err != nil {
+		return false, err
+	}
+	
+	// Reconstruct scalars c and s
+	cBytes64 := make([]byte, 64)
+	copy(cBytes64, cBytes)
+	c := edwards25519.NewScalar()
+	c.SetUniformBytes(cBytes64)
+	
+	sBytes64 := make([]byte, 64)
+	copy(sBytes64, sBytes)
+	s := edwards25519.NewScalar()
+	s.SetUniformBytes(sBytes64)
+	
+	// U = s*B - c*Y
+	cY := new(edwards25519.Point).ScalarMult(c, Y)
+	sB := new(edwards25519.Point).ScalarBaseMult(s)
+	U := new(edwards25519.Point).Subtract(sB, cY)
+	
+	// V = s*H - c*Gamma
+	sH := new(edwards25519.Point).ScalarMult(s, H)
+	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
+	V := new(edwards25519.Point).Subtract(sH, cGamma)
+	
+	// cprime = hash_points(Y, H, Gamma, U, V)
+	cprime := hashPoints(Y, H, Gamma, U, V)
+	
+	// Verify c == cprime (first 16 bytes)
+	return subtle.ConstantTimeCompare(cBytes, cprime.Bytes()[:16]) == 1, nil
+}
+
+// proofToHash converts a VRF proof to its output hash
+func proofToHash(pi []byte) ([]byte, error) {
+	Gamma, _, _, err := decodeProof(pi)
+	if err != nil {
+		return nil, err
+	}
+	
+	var hashInput [34]byte
+	hashInput[0] = vrfSuite
+	hashInput[1] = 0x03
+	
+	// Apply cofactor to Gamma
+	Gamma.MultByCofactor(Gamma)
+	copy(hashInput[2:], Gamma.Bytes())
+	
+	h := sha512.New()
+	h.Write(hashInput[:])
+	return h.Sum(nil), nil
+}
+
+// decodeProof decodes an 80-byte VRF proof
+func decodeProof(pi []byte) (*edwards25519.Point, []byte, []byte, error) {
+	if len(pi) != ProofSize {
+		return nil, nil, nil, fmt.Errorf("proof must be %d bytes, got %d", ProofSize, len(pi))
+	}
+	
+	// Gamma = pi[0:32]
+	Gamma := &edwards25519.Point{}
+	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
+		return nil, nil, nil, fmt.Errorf("invalid Gamma point: %w", err)
+	}
+	
+	// c = pi[32:48] (16 bytes)
+	c := make([]byte, 16)
+	copy(c, pi[32:48])
+	
+	// s = pi[48:80] (32 bytes)
+	s := make([]byte, 32)
+	copy(s, pi[48:80])
+	
+	return Gamma, c, s, nil
 }
