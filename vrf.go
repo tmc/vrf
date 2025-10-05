@@ -1,7 +1,7 @@
-// Package vrf implements ECVRF-EDWARDS25519-SHA512-ELL2 (ciphersuite 0x04) 
-// from RFC 9381: Verifiable Random Functions (VRFs)
+// Package vrf implements ECVRF-EDWARDS25519-SHA512-ELL2 (suite 0x04).
 //
-// This is a clean implementation separated from Algorand's go-algorand codebase.
+// This follows draft-irtf-cfrg-vrf-03 (matching Algorand's implementation),
+// not the final RFC 9381 which changed hash-to-curve.
 package vrf
 
 import (
