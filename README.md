@@ -18,7 +18,7 @@ pk, sk := vrf.Keygen(seed)
 proof, err := sk.Prove(message)
 
 // Verify and get output
-output, err := pk.Verify(proof, message)
+output, err := vrf.Verify(pk, message, proof)
 ```
 
 See package documentation for details.

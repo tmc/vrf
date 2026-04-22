@@ -71,6 +71,32 @@ func ExamplePublicKey_Verify() {
 	// VRF output size: 64 bytes
 }
 
+func ExampleVerify() {
+	// Generate keys
+	var seed [32]byte
+	rand.Read(seed[:])
+	publicKey, privateKey := vrf.Keygen(seed)
+
+	// Message
+	message := []byte("hello world")
+
+	// Generate proof
+	proof, err := privateKey.Prove(message)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Verify proof with the package-level helper.
+	output, err := vrf.Verify(publicKey, message, proof)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("VRF output size: %d bytes\n", len(output))
+	// Output:
+	// VRF output size: 64 bytes
+}
+
 func Example() {
 	// Generate a random seed for deterministic key generation
 	var seed [32]byte
@@ -91,7 +117,7 @@ func Example() {
 	}
 
 	// Verify proof and get deterministic output
-	output, err := publicKey.Verify(proof, message)
+	output, err := vrf.Verify(publicKey, message, proof)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,7 +127,7 @@ func Example() {
 	fmt.Printf("Generated VRF output (%d bytes)\n", len(output))
 
 	// Verify with a different message fails
-	_, err = publicKey.Verify(proof, []byte("different-message"))
+	_, err = vrf.Verify(publicKey, []byte("different-message"), proof)
 	if err != nil {
 		fmt.Println("Verification with different message failed (expected)")
 	}

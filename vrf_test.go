@@ -31,6 +31,14 @@ func TestVRFBasicOperation(t *testing.T) {
 		t.Fatalf("Failed to verify proof: %v", err)
 	}
 
+	outputPkg, err := Verify(pk, message, proof)
+	if err != nil {
+		t.Fatalf("Failed to verify proof with package-level helper: %v", err)
+	}
+	if !bytes.Equal(output1[:], outputPkg[:]) {
+		t.Fatal("Method and package-level verification returned different outputs")
+	}
+
 	// Verify again to ensure deterministic output
 	output2, err := pk.Verify(proof, message)
 	if err != nil {
@@ -47,6 +55,10 @@ func TestVRFBasicOperation(t *testing.T) {
 	_, err = pk.Verify(proof, wrongMessage)
 	if err == nil {
 		t.Error("Expected verification to fail for wrong message")
+	}
+	_, err = Verify(pk, wrongMessage, proof)
+	if err == nil {
+		t.Error("Expected package-level verification to fail for wrong message")
 	}
 }
 
