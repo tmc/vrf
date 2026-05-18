@@ -11,8 +11,12 @@ Algorand cannot upgrade due to blockchain immutability.
 ```go
 import "github.com/tmc/vrf"
 
-// Generate key pair from seed
-pk, sk := vrf.Keygen(seed)
+// Generate key pair from randomness
+pk, sk, err := vrf.GenerateKey(rand.Reader)
+
+// Or derive a private key from a 32-byte seed
+sk = vrf.NewKeyFromSeed(seed)
+pk = sk.Public().(vrf.PublicKey)
 
 // Create proof
 proof, err := sk.Prove(message)
