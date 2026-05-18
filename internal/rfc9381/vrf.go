@@ -1,5 +1,9 @@
-// Package rfc9381 implements ECVRF-EDWARDS25519-SHA512-ELL2 (suite 0x04)
-// according to RFC 9381.
+// Package rfc9381 is an incomplete ECVRF-EDWARDS25519-SHA512-ELL2
+// implementation.
+//
+// This package is not ready for use. It is kept in-tree as a work area for the
+// RFC 9381 port; design.md lists the known spec deviations that must be fixed
+// before this package is published as an implementation.
 package rfc9381
 
 import (
