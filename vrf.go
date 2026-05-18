@@ -1,13 +1,14 @@
-// Package vrf implements ECVRF-EDWARDS25519-SHA512-ELL2 (suite 0x04).
-//
-// This follows draft-irtf-cfrg-vrf-03 (matching Algorand's implementation),
-// not the final RFC 9381 which changed hash-to-curve.
 package vrf
 
 import (
+	"crypto"
+	cryptorand "crypto/rand"
 	"crypto/sha512"
 	"crypto/subtle"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
 
 	"filippo.io/edwards25519"
 	"filippo.io/edwards25519/field"
@@ -18,6 +19,8 @@ const (
 	PublicKeySize = 32
 	// PrivateKeySize is the size of a VRF private key in bytes
 	PrivateKeySize = 64
+	// SeedSize is the size of a VRF private key seed in bytes
+	SeedSize = 32
 	// ProofSize is the size of a VRF proof in bytes
 	ProofSize = 80
 	// OutputSize is the size of VRF output in bytes
@@ -25,6 +28,9 @@ const (
 
 	// vrfSuite identifies ECVRF-EDWARDS25519-SHA512-ELL2 ciphersuite
 	vrfSuite = 0x04
+
+	// SuiteString identifies the draft-03 suite implemented by this package.
+	SuiteString = "ECVRF-ED25519-SHA512-Elligator2 (draft-03)"
 )
 
 // PublicKey represents a VRF public key
@@ -39,8 +45,82 @@ type Proof [ProofSize]byte
 // Output represents VRF output hash
 type Output [OutputSize]byte
 
-// Keygen generates a VRF key pair from a 32-byte seed
-func Keygen(seed [32]byte) (PublicKey, PrivateKey) {
+var (
+	// ErrInvalidPublicKey reports a malformed public key.
+	ErrInvalidPublicKey = errors.New("vrf: invalid public key")
+
+	// ErrSmallOrderPoint reports a public key with small order.
+	ErrSmallOrderPoint = errors.New("vrf: public key is a small-order point")
+
+	// ErrInvalidProof reports a malformed or invalid VRF proof.
+	ErrInvalidProof = errors.New("vrf: invalid proof")
+
+	// ErrVerifyFailed reports a proof that does not verify.
+	ErrVerifyFailed = errors.New("vrf: proof verification failed")
+)
+
+// PrefixUint64 returns the first 8 bytes of o interpreted as a big-endian
+// unsigned integer.
+//
+// The result is a lossy prefix of the 64-byte VRF output, intended for
+// sortition-style threshold comparisons. Use o directly when the full VRF
+// output is required.
+func (o Output) PrefixUint64() uint64 {
+	return binary.BigEndian.Uint64(o[:8])
+}
+
+// GenerateKey generates a new VRF key pair using rand.
+//
+// If rand is nil, crypto/rand.Reader is used.
+func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {
+	if rand == nil {
+		rand = cryptorand.Reader
+	}
+	var seed [SeedSize]byte
+	if _, err := io.ReadFull(rand, seed[:]); err != nil {
+		return PublicKey{}, PrivateKey{}, fmt.Errorf("read seed: %w", err)
+	}
+	pub, priv := keygen(seed)
+	return pub, priv, nil
+}
+
+// ParsePublicKey returns a PublicKey from its 32-byte encoding.
+//
+// It validates the length only. Point decoding and small-order checks happen
+// during verification.
+func ParsePublicKey(b []byte) (PublicKey, error) {
+	var pk PublicKey
+	if len(b) != PublicKeySize {
+		return pk, fmt.Errorf("%w: must be %d bytes, got %d", ErrInvalidPublicKey, PublicKeySize, len(b))
+	}
+	copy(pk[:], b)
+	return pk, nil
+}
+
+// ParseProof returns a Proof from its 80-byte encoding.
+func ParseProof(b []byte) (Proof, error) {
+	var proof Proof
+	if len(b) != ProofSize {
+		return proof, fmt.Errorf("%w: must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(b))
+	}
+	copy(proof[:], b)
+	return proof, nil
+}
+
+// NewKeyFromSeed derives a VRF private key from seed.
+//
+// It panics if len(seed) is not SeedSize, matching crypto/ed25519.NewKeyFromSeed.
+func NewKeyFromSeed(seed []byte) PrivateKey {
+	if len(seed) != SeedSize {
+		panic("vrf: bad seed length")
+	}
+	var fixed [SeedSize]byte
+	copy(fixed[:], seed)
+	_, priv := keygen(fixed)
+	return priv
+}
+
+func keygen(seed [SeedSize]byte) (PublicKey, PrivateKey) {
 	var pk PublicKey
 	var sk PrivateKey
 
@@ -59,9 +139,36 @@ func Keygen(seed [32]byte) (PublicKey, PrivateKey) {
 	return pk, sk
 }
 
-// Verify verifies proof for msg under pub and returns the VRF output.
+// Public returns the public key corresponding to sk.
+func (sk PrivateKey) Public() crypto.PublicKey {
+	var pk PublicKey
+	copy(pk[:], sk[SeedSize:])
+	return pk
+}
+
+// Seed returns a copy of sk's private key seed.
+func (sk PrivateKey) Seed() []byte {
+	seed := make([]byte, SeedSize)
+	copy(seed, sk[:SeedSize])
+	return seed
+}
+
+// Equal reports whether sk and x contain the same private key.
+func (sk PrivateKey) Equal(x crypto.PrivateKey) bool {
+	other, ok := x.(PrivateKey)
+	return ok && subtle.ConstantTimeCompare(sk[:], other[:]) == 1
+}
+
+// Equal reports whether pk and x contain the same public key.
+func (pk PublicKey) Equal(x crypto.PublicKey) bool {
+	other, ok := x.(PublicKey)
+	return ok && subtle.ConstantTimeCompare(pk[:], other[:]) == 1
+}
+
+// Verify is the package-level form of (PublicKey).Verify, with arguments in
+// ed25519.Verify order: pub, msg, proof.
 //
-// Its argument order matches ed25519.Verify.
+// The method form keeps the historical order, proof before message.
 func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 	return pub.Verify(proof, msg)
 }
@@ -103,7 +210,7 @@ func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte
 
 	Y := edwards25519.NewIdentityPoint()
 	if _, err := Y.SetBytes(sk[32:]); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
 	}
 
 	return Y, xScalar, truncHashedSk, nil
@@ -113,13 +220,13 @@ func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte
 func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) ([]byte, error) {
 	Y := &edwards25519.Point{}
 	if _, err := Y.SetBytes(pk); err != nil {
-		return nil, fmt.Errorf("invalid public key: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
 	}
 
 	// Check if public key has small order
 	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(edwards25519.NewIdentityPoint()) == 1
 	if isSmallOrder {
-		return nil, fmt.Errorf("public key is a small order point")
+		return nil, ErrSmallOrderPoint
 	}
 
 	// Verify the proof
@@ -128,7 +235,7 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) ([]byte, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("proof verification failed")
+		return nil, ErrVerifyFailed
 	}
 
 	// Convert proof to hash
@@ -443,13 +550,13 @@ func proofToHash(pi []byte) ([]byte, error) {
 // decodeProof decodes an 80-byte VRF proof
 func decodeProof(pi []byte) (*edwards25519.Point, []byte, []byte, error) {
 	if len(pi) != ProofSize {
-		return nil, nil, nil, fmt.Errorf("proof must be %d bytes, got %d", ProofSize, len(pi))
+		return nil, nil, nil, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
 	}
 
 	// Gamma = pi[0:32]
 	Gamma := &edwards25519.Point{}
 	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
-		return nil, nil, nil, fmt.Errorf("invalid Gamma point: %w", err)
+		return nil, nil, nil, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
 	}
 
 	// c = pi[32:48] (16 bytes)

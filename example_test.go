@@ -2,21 +2,53 @@ package vrf_test
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 
 	"github.com/tmc/vrf"
 )
 
-func ExampleKeygen() {
-	// Generate a random seed
-	var seed [32]byte
-	if _, err := rand.Read(seed[:]); err != nil {
+func ExampleParsePublicKey() {
+	seed := make([]byte, vrf.SeedSize)
+	privateKey := vrf.NewKeyFromSeed(seed)
+
+	wire, err := hex.DecodeString("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29")
+	if err != nil {
+		log.Fatal(err)
+	}
+	parsed, err := vrf.ParsePublicKey(wire)
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Generate VRF key pair from seed
-	publicKey, privateKey := vrf.Keygen(seed)
+	proof, err := privateKey.Prove([]byte("message"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	output, err := vrf.Verify(parsed, []byte("message"), proof)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(len(output))
+	// Output:
+	// 64
+}
+
+func ExampleOutput_PrefixUint64() {
+	var out vrf.Output
+	copy(out[:], []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef})
+
+	fmt.Printf("%016x\n", out.PrefixUint64())
+	// Output:
+	// 0123456789abcdef
+}
+
+func ExampleGenerateKey() {
+	publicKey, privateKey, err := vrf.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Public key size: %d bytes\n", len(publicKey))
 	fmt.Printf("Private key size: %d bytes\n", len(privateKey))
@@ -27,9 +59,11 @@ func ExampleKeygen() {
 
 func ExamplePrivateKey_Prove() {
 	// Generate keys
-	var seed [32]byte
-	rand.Read(seed[:])
-	_, privateKey := vrf.Keygen(seed)
+	seed := make([]byte, vrf.SeedSize)
+	if _, err := rand.Read(seed); err != nil {
+		log.Fatal(err)
+	}
+	privateKey := vrf.NewKeyFromSeed(seed)
 
 	// Message to create proof for
 	message := []byte("hello world")
@@ -47,9 +81,12 @@ func ExamplePrivateKey_Prove() {
 
 func ExamplePublicKey_Verify() {
 	// Generate keys
-	var seed [32]byte
-	rand.Read(seed[:])
-	publicKey, privateKey := vrf.Keygen(seed)
+	seed := make([]byte, vrf.SeedSize)
+	if _, err := rand.Read(seed); err != nil {
+		log.Fatal(err)
+	}
+	privateKey := vrf.NewKeyFromSeed(seed)
+	publicKey := privateKey.Public().(vrf.PublicKey)
 
 	// Message
 	message := []byte("hello world")
@@ -73,9 +110,12 @@ func ExamplePublicKey_Verify() {
 
 func ExampleVerify() {
 	// Generate keys
-	var seed [32]byte
-	rand.Read(seed[:])
-	publicKey, privateKey := vrf.Keygen(seed)
+	seed := make([]byte, vrf.SeedSize)
+	if _, err := rand.Read(seed); err != nil {
+		log.Fatal(err)
+	}
+	privateKey := vrf.NewKeyFromSeed(seed)
+	publicKey := privateKey.Public().(vrf.PublicKey)
 
 	// Message
 	message := []byte("hello world")
@@ -99,13 +139,14 @@ func ExampleVerify() {
 
 func Example() {
 	// Generate a random seed for deterministic key generation
-	var seed [32]byte
-	if _, err := rand.Read(seed[:]); err != nil {
+	seed := make([]byte, vrf.SeedSize)
+	if _, err := rand.Read(seed); err != nil {
 		log.Fatal(err)
 	}
 
 	// Generate VRF key pair
-	publicKey, privateKey := vrf.Keygen(seed)
+	privateKey := vrf.NewKeyFromSeed(seed)
+	publicKey := privateKey.Public().(vrf.PublicKey)
 
 	// Message to prove randomness for
 	message := []byte("block-12345")
