@@ -1,8 +1,9 @@
 // Package vrf implements ECVRF-EDWARDS25519-SHA512-ELL2 (suite 0x04).
 //
 // This package follows draft-irtf-cfrg-vrf-03, matching Algorand's
-// implementation. It is not an RFC 9381 implementation; the final RFC changed
-// the hash-to-curve construction and transcript details.
+// implementation. For an explicit Algorand import path, use
+// github.com/tmc/vrf/algorand. For the final RFC 9381 suite, use
+// github.com/tmc/vrf/rfc9381.
 //
 // Basic use:
 //
