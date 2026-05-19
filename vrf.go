@@ -168,7 +168,8 @@ func (pk PublicKey) Equal(x crypto.PublicKey) bool {
 // Verify is the package-level form of (PublicKey).Verify, with arguments in
 // ed25519.Verify order: pub, msg, proof.
 //
-// The method form keeps the historical order, proof before message.
+// The method form keeps proof before message because the receiver supplies the
+// public key.
 func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 	return pub.Verify(proof, msg)
 }
@@ -183,7 +184,10 @@ func (sk PrivateKey) Prove(message []byte) (Proof, error) {
 	return vrfProve(Y, xScalar, truncHashedSk, message)
 }
 
-// Verify verifies a VRF proof and returns the VRF output if valid
+// Verify verifies proof over message and returns the VRF output if valid.
+//
+// The method argument order is proof, message. The package-level Verify uses
+// pub, message, proof to match crypto/ed25519.Verify.
 func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
 	var out Output
 

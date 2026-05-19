@@ -179,7 +179,9 @@ func TestGenerateKey(t *testing.T) {
 
 func TestVRFInvalidInputs(t *testing.T) {
 	var seed [32]byte
-	rand.Read(seed[:])
+	if _, err := rand.Read(seed[:]); err != nil {
+		t.Fatal(err)
+	}
 	pk, sk := keygen(seed)
 	message := []byte("test")
 
@@ -316,7 +318,9 @@ func TestOutputPrefixUint64(t *testing.T) {
 
 func BenchmarkVRFProve(b *testing.B) {
 	var seed [32]byte
-	rand.Read(seed[:])
+	if _, err := rand.Read(seed[:]); err != nil {
+		b.Fatal(err)
+	}
 	_, sk := keygen(seed)
 	message := []byte("benchmark message")
 
@@ -331,7 +335,9 @@ func BenchmarkVRFProve(b *testing.B) {
 
 func BenchmarkVRFVerify(b *testing.B) {
 	var seed [32]byte
-	rand.Read(seed[:])
+	if _, err := rand.Read(seed[:]); err != nil {
+		b.Fatal(err)
+	}
 	pk, sk := keygen(seed)
 	message := []byte("benchmark message")
 
