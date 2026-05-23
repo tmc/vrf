@@ -57,7 +57,13 @@ var (
 
 	// ErrVerifyFailed reports a proof that does not verify.
 	ErrVerifyFailed = errors.New("vrf: proof verification failed")
+
+	identityPoint = edwards25519.NewIdentityPoint()
+	oneFE         = new(field.Element).One()
+	curve25519AFE = new(field.Element).Mult32(oneFE, curve25519A)
 )
+
+const curve25519A = 486662
 
 // PrefixUint64 returns the first 8 bytes of o interpreted as a big-endian
 // unsigned integer.
@@ -124,9 +130,7 @@ func keygen(seed [SeedSize]byte) (PublicKey, PrivateKey) {
 	var pk PublicKey
 	var sk PrivateKey
 
-	h := sha512.New()
-	h.Write(seed[:])
-	hSum := h.Sum(nil)
+	hSum := sha512.Sum512(seed[:])
 
 	p := edwards25519.NewScalar()
 	p.SetBytesWithClamping(hSum[:32])
@@ -176,12 +180,8 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 
 // Prove generates a VRF proof for the given message
 func (sk PrivateKey) Prove(message []byte) (Proof, error) {
-	Y, xScalar, truncHashedSk, err := sk.expand()
-	if err != nil {
-		return Proof{}, err
-	}
-
-	return vrfProve(Y, xScalar, truncHashedSk, message)
+	xScalar, truncHashedSk := sk.expand()
+	return vrfProve(sk[32:], xScalar, truncHashedSk, message)
 }
 
 // Verify verifies proof over message and returns the VRF output if valid.
@@ -189,57 +189,43 @@ func (sk PrivateKey) Prove(message []byte) (Proof, error) {
 // The method argument order is proof, message. The package-level Verify uses
 // pub, message, proof to match crypto/ed25519.Verify.
 func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
-	var out Output
-
-	hash, err := vrfVerifyAndHash(pk[:], proof[:], message)
-	if err != nil {
-		return out, err
-	}
-
-	copy(out[:], hash)
-	return out, nil
+	return vrfVerifyAndHash(pk[:], proof[:], message)
 }
 
-// expand converts a private key into the public point Y, private scalar x,
-// and truncated hash for nonce generation
-func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte, error) {
-	h := sha512.New()
-	h.Write(sk[:32])
-	hSum := h.Sum(nil)
+// expand converts a private key into the private scalar x and truncated hash
+// for nonce generation.
+func (sk PrivateKey) expand() (*edwards25519.Scalar, [32]byte) {
+	hSum := sha512.Sum512(sk[:32])
 
 	xScalar := edwards25519.NewScalar()
 	xScalar.SetBytesWithClamping(hSum[:32])
 
-	truncHashedSk := hSum[32:]
+	var truncHashedSk [32]byte
+	copy(truncHashedSk[:], hSum[32:])
 
-	Y := edwards25519.NewIdentityPoint()
-	if _, err := Y.SetBytes(sk[32:]); err != nil {
-		return nil, nil, nil, fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
-	}
-
-	return Y, xScalar, truncHashedSk, nil
+	return xScalar, truncHashedSk
 }
 
 // vrfVerifyAndHash verifies a VRF proof and returns the output hash
-func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) ([]byte, error) {
+func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) (Output, error) {
 	Y := &edwards25519.Point{}
 	if _, err := Y.SetBytes(pk); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
+		return Output{}, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
 	}
 
 	// Check if public key has small order
-	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(edwards25519.NewIdentityPoint()) == 1
+	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(identityPoint) == 1
 	if isSmallOrder {
-		return nil, ErrSmallOrderPoint
+		return Output{}, ErrSmallOrderPoint
 	}
 
 	// Verify the proof
-	ok, err := vrfVerify(Y, proof, message)
+	ok, err := vrfVerify(pk, Y, proof, message)
 	if err != nil {
-		return nil, err
+		return Output{}, err
 	}
 	if !ok {
-		return nil, ErrVerifyFailed
+		return Output{}, ErrVerifyFailed
 	}
 
 	// Convert proof to hash
@@ -247,36 +233,40 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) ([]byte, error) {
 }
 
 // vrfProve constructs a VRF proof for a message
-func vrfProve(Y *edwards25519.Point, xScalar *edwards25519.Scalar, truncHashedSk []byte, message []byte) (Proof, error) {
+func vrfProve(YBytes []byte, xScalar *edwards25519.Scalar, truncHashedSk [32]byte, message []byte) (Proof, error) {
 	var proof Proof
 
 	// Hash message to curve point
-	H, err := hashToCurve(Y, message)
+	H, HBytes, err := hashToCurve(YBytes, message)
 	if err != nil {
 		return Proof{}, err
 	}
 
 	// Gamma = x * H
 	Gamma := new(edwards25519.Point).ScalarMult(xScalar, H)
+	GammaBytes := pointBytes(Gamma)
 
 	// Generate nonce
-	k := nonceGeneration(truncHashedSk, H)
+	k := nonceGeneration(truncHashedSk, HBytes)
 
 	// kB = k * B (base point)
 	kB := edwards25519.NewIdentityPoint().ScalarBaseMult(k)
+	kBBytes := pointBytes(kB)
 
 	// kH = k * H
 	kH := edwards25519.NewIdentityPoint().ScalarMult(k, H)
+	kHBytes := pointBytes(kH)
 
 	// c = hash_points(H, Gamma, kB, kH)
-	c := hashPoints(H, Gamma, kB, kH)
+	c := hashPoints(HBytes, GammaBytes, kBBytes, kHBytes)
 
 	// s = c*x + k (mod q)
 	s := edwards25519.NewScalar()
-	s.MultiplyAdd(c, xScalar, k)
+	s.Multiply(c, xScalar)
+	s.Add(s, k)
 
 	// Encode proof as Gamma || c (16 bytes) || s
-	copy(proof[:], Gamma.Bytes())
+	copy(proof[:], GammaBytes[:])
 	copy(proof[32:], c.Bytes()[:16])
 	copy(proof[48:], s.Bytes())
 
@@ -284,51 +274,38 @@ func vrfProve(Y *edwards25519.Point, xScalar *edwards25519.Scalar, truncHashedSk
 }
 
 // hashToCurve hashes a message to a curve point using Elligator2
-func hashToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
+func hashToCurve(YBytes []byte, message []byte) (*edwards25519.Point, [32]byte, error) {
 	h := sha512.New()
 	h.Write([]byte{vrfSuite})
 	h.Write([]byte{1})
-	h.Write(Y.Bytes())
+	h.Write(YBytes)
 	h.Write(message)
 
-	rString := h.Sum(nil)
+	var rString [sha512.Size]byte
+	h.Sum(rString[:0])
 	rString[31] &= 0x7f // clear sign bit
 
-	hBytes, err := elligator2(rString)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &edwards25519.Point{}
-	if _, err := result.SetBytes(hBytes); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return elligator2(rString[:])
 }
 
 // elligator2 implements the Elligator2 map from uniform bytes to Edwards25519 point
-func elligator2(r []byte) ([]byte, error) {
-	s := make([]byte, 32)
-	copy(s, r[:32])
+func elligator2(r []byte) (*edwards25519.Point, [32]byte, error) {
+	var out [32]byte
+	var s [32]byte
+	copy(s[:], r[:32])
 
 	xSign := s[31] & 0x80
 	s[31] &= 0x7f
 
-	one := new(field.Element).One()
-
 	// rr2 = 2*r^2
 	rr2 := &field.Element{}
-	rr2.SetBytes(s)
+	rr2.SetBytes(s[:])
 	rr2.Square(rr2)
 	rr2.Add(rr2, rr2)
-	rr2.Add(rr2, one)
+	rr2.Add(rr2, oneFE)
 	rr2.Invert(rr2)
 
 	// x = -A * rr2
-	const curve25519A = 486662
-	curve25519AElement := new(field.Element).Mult32(one, curve25519A)
-
 	x := &field.Element{}
 	x.Mult32(rr2, curve25519A)
 	x.Negate(x)
@@ -356,62 +333,62 @@ func elligator2(r []byte) ([]byte, error) {
 	x.Select(x, negx, eIsNotMinus1)
 
 	x2.Zero()
-	x2.Select(x2, curve25519AElement, eIsNotMinus1)
+	x2.Select(x2, curve25519AFE, eIsNotMinus1)
 	x.Subtract(x, x2)
 
 	// Convert to Edwards coordinates: yed = (x-1)/(x+1)
-	xPlusOne := new(field.Element).Add(x, one)
-	xMinusOne := new(field.Element).Subtract(x, one)
+	xPlusOne := new(field.Element).Add(x, oneFE)
+	xMinusOne := new(field.Element).Subtract(x, oneFE)
 	xPlusOneInv := new(field.Element).Invert(xPlusOne)
 	yed := new(field.Element).Multiply(xMinusOne, xPlusOneInv)
 
-	s = yed.Bytes()
+	copy(s[:], yed.Bytes())
 	s[31] |= xSign
 
 	// Decode as Edwards point and multiply by cofactor
 	p3 := &edwards25519.Point{}
-	if _, err := p3.SetBytes(s); err != nil {
-		return nil, err
+	if _, err := p3.SetBytes(s[:]); err != nil {
+		return nil, out, err
 	}
 
 	p3.MultByCofactor(p3)
-	return p3.Bytes(), nil
+	copy(out[:], p3.Bytes())
+	return p3, out, nil
 }
 
 // nonceGeneration generates a deterministic nonce for VRF proving
-func nonceGeneration(truncHashedSk []byte, H *edwards25519.Point) *edwards25519.Scalar {
+func nonceGeneration(truncHashedSk [32]byte, HBytes [32]byte) *edwards25519.Scalar {
 	h := sha512.New()
-	h.Write(truncHashedSk)
-	h.Write(H.Bytes())
+	h.Write(truncHashedSk[:])
+	h.Write(HBytes[:])
 
-	kBytes := h.Sum(nil)
+	var kBytes [sha512.Size]byte
+	h.Sum(kBytes[:0])
 	k := edwards25519.NewScalar()
-	k.SetUniformBytes(kBytes)
+	k.SetUniformBytes(kBytes[:])
 
 	return k
 }
 
-// hashPoints hashes four points to produce a scalar challenge
-func hashPoints(P1, P2, P3, P4 *edwards25519.Point) *edwards25519.Scalar {
+// hashPoints hashes four encoded points to produce a scalar challenge.
+func hashPoints(P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) *edwards25519.Scalar {
 	var input [2 + 32*4]byte
 
 	input[0] = vrfSuite
 	input[1] = 0x02
-	copy(input[2:], P1.Bytes())
-	copy(input[34:], P2.Bytes())
-	copy(input[66:], P3.Bytes())
-	copy(input[98:], P4.Bytes())
+	copy(input[2:], P1Bytes[:])
+	copy(input[34:], P2Bytes[:])
+	copy(input[66:], P3Bytes[:])
+	copy(input[98:], P4Bytes[:])
 
-	h := sha512.New()
-	h.Write(input[:])
-	sum := h.Sum(nil)
+	sum := sha512.Sum512(input[:])
 
 	// Use first 16 bytes as 32-byte scalar (zero-padded)
-	result := make([]byte, 32)
-	copy(result, sum[:16])
+	var result [32]byte
+	copy(result[:], sum[:16])
 
 	scalar := edwards25519.NewScalar()
-	if _, err := scalar.SetCanonicalBytes(result); err != nil {
+	if _, err := scalar.SetCanonicalBytes(result[:]); err != nil {
 		panic("invalid scalar from hash")
 	}
 
@@ -490,7 +467,7 @@ func chi25519(z *field.Element) *field.Element {
 }
 
 // vrfVerify verifies a VRF proof
-func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
+func vrfVerify(YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	// Decode proof
 	Gamma, cBytes, sBytes, err := decodeProof(pi)
 	if err != nil {
@@ -498,44 +475,49 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	}
 
 	// Hash message to curve
-	H, err := hashToCurve(Y, message)
+	H, HBytes, err := hashToCurve(YBytes, message)
 	if err != nil {
 		return false, err
 	}
 
 	// Reconstruct scalars c and s
-	cBytes64 := make([]byte, 64)
-	copy(cBytes64, cBytes)
 	c := edwards25519.NewScalar()
-	c.SetUniformBytes(cBytes64)
+	cWide := scalarBytes16(cBytes)
+	if _, err := c.SetCanonicalBytes(cWide[:]); err != nil {
+		return false, fmt.Errorf("%w: invalid c scalar: %v", ErrInvalidProof, err)
+	}
 
-	sBytes64 := make([]byte, 64)
-	copy(sBytes64, sBytes)
 	s := edwards25519.NewScalar()
-	s.SetUniformBytes(sBytes64)
+	sWide := scalarBytes32(sBytes)
+	if _, err := s.SetUniformBytes(sWide[:]); err != nil {
+		return false, fmt.Errorf("%w: invalid s scalar: %v", ErrInvalidProof, err)
+	}
 
 	// U = s*B - c*Y
-	cY := new(edwards25519.Point).ScalarMult(c, Y)
-	sB := new(edwards25519.Point).ScalarBaseMult(s)
-	U := new(edwards25519.Point).Subtract(sB, cY)
+	cNeg := edwards25519.NewScalar().Negate(c)
+	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(cNeg, Y, s)
 
 	// V = s*H - c*Gamma
-	sH := new(edwards25519.Point).ScalarMult(s, H)
-	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
-	V := new(edwards25519.Point).Subtract(sH, cGamma)
+	scalars := [...]*edwards25519.Scalar{cNeg, s}
+	points := [...]*edwards25519.Point{Gamma, H}
+	V := new(edwards25519.Point).VarTimeMultiScalarMult(scalars[:], points[:])
 
 	// cprime = hash_points(H, Gamma, U, V)
-	cprime := hashPoints(H, Gamma, U, V)
+	var GammaBytes [32]byte
+	copy(GammaBytes[:], pi[:32])
+	cprime := hashPoints(HBytes, GammaBytes, pointBytes(U), pointBytes(V))
 
 	// Verify c == cprime (first 16 bytes)
-	return subtle.ConstantTimeCompare(cBytes, cprime.Bytes()[:16]) == 1, nil
+	return subtle.ConstantTimeCompare(cBytes[:], cprime.Bytes()[:16]) == 1, nil
 }
 
 // proofToHash converts a VRF proof to its output hash
-func proofToHash(pi []byte) ([]byte, error) {
+func proofToHash(pi []byte) (Output, error) {
+	var out Output
+
 	Gamma, _, _, err := decodeProof(pi)
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 
 	var hashInput [34]byte
@@ -546,30 +528,48 @@ func proofToHash(pi []byte) ([]byte, error) {
 	Gamma.MultByCofactor(Gamma)
 	copy(hashInput[2:], Gamma.Bytes())
 
-	h := sha512.New()
-	h.Write(hashInput[:])
-	return h.Sum(nil), nil
+	sum := sha512.Sum512(hashInput[:])
+	copy(out[:], sum[:])
+	return out, nil
 }
 
 // decodeProof decodes an 80-byte VRF proof
-func decodeProof(pi []byte) (*edwards25519.Point, []byte, []byte, error) {
+func decodeProof(pi []byte) (*edwards25519.Point, [16]byte, [32]byte, error) {
+	var c [16]byte
+	var s [32]byte
 	if len(pi) != ProofSize {
-		return nil, nil, nil, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
+		return nil, c, s, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
 	}
 
 	// Gamma = pi[0:32]
 	Gamma := &edwards25519.Point{}
 	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
-		return nil, nil, nil, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
+		return nil, c, s, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
 	}
 
 	// c = pi[32:48] (16 bytes)
-	c := make([]byte, 16)
-	copy(c, pi[32:48])
+	copy(c[:], pi[32:48])
 
 	// s = pi[48:80] (32 bytes)
-	s := make([]byte, 32)
-	copy(s, pi[48:80])
+	copy(s[:], pi[48:80])
 
 	return Gamma, c, s, nil
+}
+
+func scalarBytes16(in [16]byte) [32]byte {
+	var out [32]byte
+	copy(out[:], in[:])
+	return out
+}
+
+func scalarBytes32(in [32]byte) [64]byte {
+	var out [64]byte
+	copy(out[:], in[:])
+	return out
+}
+
+func pointBytes(p *edwards25519.Point) [32]byte {
+	var out [32]byte
+	copy(out[:], p.Bytes())
+	return out
 }
