@@ -248,7 +248,9 @@ func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byt
 }
 
 func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.Point, bool, error) {
-	Gamma, cBytes, s, err := decodeProof(pi)
+	var Gamma edwards25519.Point
+	var s edwards25519.Scalar
+	cBytes, err := decodeProof(&Gamma, &s, pi)
 	if err != nil {
 		return nil, false, err
 	}
@@ -262,14 +264,14 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.
 	// Y, c, and s are all derived from public inputs, so using variable-time
 	// multiplication here does not reveal secret material.
 	negC := new(edwards25519.Scalar).Negate(c)
-	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, s)
+	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, &s)
 
-	sH := new(edwards25519.Point).ScalarMult(s, H)
-	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
+	sH := new(edwards25519.Point).ScalarMult(&s, H)
+	cGamma := new(edwards25519.Point).ScalarMult(c, &Gamma)
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
-	cPrime := challenge(Y, H, Gamma, U, V)
-	return Gamma, subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
+	cPrime := challenge(Y, H, &Gamma, U, V)
+	return &Gamma, subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
 }
 
 func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
@@ -486,33 +488,32 @@ func scalarFromTruncated(b [16]byte) *edwards25519.Scalar {
 	return out
 }
 
-func decodeProof(pi []byte) (*edwards25519.Point, [16]byte, *edwards25519.Scalar, error) {
+func decodeProof(Gamma *edwards25519.Point, s *edwards25519.Scalar, pi []byte) ([16]byte, error) {
 	var c [16]byte
 	if len(pi) != ProofSize {
-		return nil, c, nil, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
+		return c, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
 	}
 
-	Gamma := new(edwards25519.Point)
 	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
-		return nil, c, nil, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
+		return c, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
 	}
 
 	copy(c[:], pi[32:48])
 
-	s := edwards25519.NewScalar()
 	if _, err := s.SetCanonicalBytes(pi[48:80]); err != nil {
-		return nil, c, nil, fmt.Errorf("%w: non-canonical scalar", ErrInvalidProof)
+		return c, fmt.Errorf("%w: non-canonical scalar", ErrInvalidProof)
 	}
 
-	return Gamma, c, s, nil
+	return c, nil
 }
 
 func proofToHash(pi []byte) ([]byte, error) {
-	Gamma, _, _, err := decodeProof(pi)
-	if err != nil {
+	var Gamma edwards25519.Point
+	var s edwards25519.Scalar
+	if _, err := decodeProof(&Gamma, &s, pi); err != nil {
 		return nil, err
 	}
-	output := proofToHashPoint(Gamma)
+	output := proofToHashPoint(&Gamma)
 	return output[:], nil
 }
 

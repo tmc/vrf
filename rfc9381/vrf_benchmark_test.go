@@ -230,16 +230,18 @@ func BenchmarkRFC9381InternalDecodeProof(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	var Gamma edwards25519.Point
+	var s edwards25519.Scalar
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		Gamma, _, s, err := decodeProof(proof[:])
+		_, err := decodeProof(&Gamma, &s, proof[:])
 		if err != nil {
 			b.Fatal(err)
 		}
-		benchmarkPoint = Gamma
-		benchmarkScalar = s
 	}
+	benchmarkPoint = &Gamma
+	benchmarkScalar = &s
 }
 
 func benchmarkKey(b *testing.B) (PublicKey, PrivateKey) {

@@ -131,18 +131,20 @@ func TestVerificationDoubleScalarOperation(t *testing.T) {
 			if _, err := Y.SetBytes(pub[:]); err != nil {
 				t.Fatal(err)
 			}
-			_, cBytes, s, err := decodeProof(proof)
+			var Gamma edwards25519.Point
+			var s edwards25519.Scalar
+			cBytes, err := decodeProof(&Gamma, &s, proof)
 			if err != nil {
 				t.Fatal(err)
 			}
 			c := scalarFromTruncated(cBytes)
 
 			wantU := new(edwards25519.Point).Subtract(
-				new(edwards25519.Point).ScalarBaseMult(s),
+				new(edwards25519.Point).ScalarBaseMult(&s),
 				new(edwards25519.Point).ScalarMult(c, Y),
 			)
 			negC := new(edwards25519.Scalar).Negate(c)
-			gotU := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, s)
+			gotU := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, &s)
 			if gotU.Equal(wantU) != 1 {
 				t.Fatal("s*B - c*Y equation mismatch")
 			}
