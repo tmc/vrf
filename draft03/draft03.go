@@ -1,4 +1,4 @@
-package algorand
+package draft03
 
 import (
 	"io"
@@ -18,20 +18,20 @@ const (
 	// OutputSize is the size of a VRF output in bytes.
 	OutputSize = vrf.OutputSize
 
-	// SuiteString identifies the Algorand-compatible draft-03 suite.
+	// SuiteString identifies the draft-03 suite.
 	SuiteString = vrf.SuiteString
 )
 
-// PublicKey represents an Algorand-compatible VRF public key.
+// PublicKey represents a draft-03 VRF public key.
 type PublicKey = vrf.PublicKey
 
-// PrivateKey represents an Algorand-compatible VRF private key.
+// PrivateKey represents a draft-03 VRF private key.
 type PrivateKey = vrf.PrivateKey
 
-// Proof represents an Algorand-compatible VRF proof.
+// Proof represents a draft-03 VRF proof.
 type Proof = vrf.Proof
 
-// Output represents an Algorand-compatible VRF output hash.
+// Output represents a draft-03 VRF output hash.
 type Output = vrf.Output
 
 var (
@@ -48,7 +48,7 @@ var (
 	ErrVerifyFailed = vrf.ErrVerifyFailed
 )
 
-// GenerateKey generates a new Algorand-compatible VRF key pair using rand.
+// GenerateKey generates a new draft-03 VRF key pair using rand.
 //
 // If rand is nil, crypto/rand.Reader is used.
 func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {

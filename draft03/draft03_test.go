@@ -1,4 +1,4 @@
-package algorand
+package draft03
 
 import (
 	"bytes"
