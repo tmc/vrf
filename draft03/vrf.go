@@ -389,7 +389,9 @@ func hashPoints(P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) *edwards25519.Scala
 
 	scalar := edwards25519.NewScalar()
 	if _, err := scalar.SetCanonicalBytes(result[:]); err != nil {
-		panic("invalid scalar from hash")
+		// Unreachable: result is 16 bytes zero-padded to 32, always < the
+		// group order, so it is always canonical.
+		panic("vrf: invalid scalar from hash")
 	}
 
 	return scalar
