@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"testing"
+
+	"filippo.io/edwards25519"
 )
 
 func TestRFC9381Vectors(t *testing.T) {
@@ -114,6 +116,37 @@ func TestConstructorsAndSentinels(t *testing.T) {
 	copy(small[:], []byte{1})
 	if _, err := Verify(small, []byte("message"), proof); !errors.Is(err, ErrSmallOrderPoint) {
 		t.Fatalf("small-order error = %v, want %v", err, ErrSmallOrderPoint)
+	}
+}
+
+func TestVerificationDoubleScalarOperation(t *testing.T) {
+	for _, v := range rfcVectors {
+		t.Run(v.name, func(t *testing.T) {
+			seed := decodeHex(t, v.seed)
+			proof := decodeHex(t, v.proof)
+			priv := NewKeyFromSeed(seed)
+			pub := priv.Public().(PublicKey)
+
+			Y := new(edwards25519.Point)
+			if _, err := Y.SetBytes(pub[:]); err != nil {
+				t.Fatal(err)
+			}
+			_, cBytes, s, err := decodeProof(proof)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c := scalarFromTruncated(cBytes)
+
+			wantU := new(edwards25519.Point).Subtract(
+				new(edwards25519.Point).ScalarBaseMult(s),
+				new(edwards25519.Point).ScalarMult(c, Y),
+			)
+			negC := new(edwards25519.Scalar).Negate(c)
+			gotU := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, s)
+			if gotU.Equal(wantU) != 1 {
+				t.Fatal("s*B - c*Y equation mismatch")
+			}
+		})
 	}
 }
 

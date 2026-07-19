@@ -264,9 +264,10 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	}
 	c := scalarFromTruncated(cBytes)
 
-	cY := new(edwards25519.Point).ScalarMult(c, Y)
-	sB := new(edwards25519.Point).ScalarBaseMult(s)
-	U := new(edwards25519.Point).Subtract(sB, cY)
+	// Y, c, and s are all derived from public inputs, so using variable-time
+	// multiplication here does not reveal secret material.
+	negC := new(edwards25519.Scalar).Negate(c)
+	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, s)
 
 	sH := new(edwards25519.Point).ScalarMult(s, H)
 	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
