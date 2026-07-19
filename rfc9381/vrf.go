@@ -191,14 +191,7 @@ func (sk PrivateKey) Prove(message []byte) (Proof, error) {
 // The method argument order is proof, message. The package-level Verify uses
 // pub, message, proof to match crypto/ed25519.Verify.
 func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
-	var out Output
-
-	hash, err := vrfVerifyAndHash(pk[:], proof[:], message)
-	if err != nil {
-		return out, err
-	}
-	copy(out[:], hash)
-	return out, nil
+	return vrfVerifyAndHash(pk[:], proof[:], message)
 }
 
 func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte, error) {
@@ -213,23 +206,23 @@ func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte
 	return Y, x, h[32:], nil
 }
 
-func vrfVerifyAndHash(pk, proof, message []byte) ([]byte, error) {
+func vrfVerifyAndHash(pk, proof, message []byte) (Output, error) {
 	Y := &edwards25519.Point{}
 	if _, err := Y.SetBytes(pk); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
+		return Output{}, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
 	}
 	if isSmallOrder(Y) {
-		return nil, ErrSmallOrderPoint
+		return Output{}, ErrSmallOrderPoint
 	}
 
-	ok, err := vrfVerify(Y, proof, message)
+	Gamma, ok, err := vrfVerify(Y, proof, message)
 	if err != nil {
-		return nil, err
+		return Output{}, err
 	}
 	if !ok {
-		return nil, ErrVerifyFailed
+		return Output{}, ErrVerifyFailed
 	}
-	return proofToHash(proof)
+	return proofToHashPoint(Gamma), nil
 }
 
 func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byte, message []byte) (Proof, error) {
@@ -252,15 +245,15 @@ func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byt
 	return proof, nil
 }
 
-func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
+func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.Point, bool, error) {
 	Gamma, cBytes, s, err := decodeProof(pi)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	H, err := encodeToCurve(Y, message)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	c := scalarFromTruncated(cBytes)
 
@@ -274,7 +267,7 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
 	cPrime := challenge(Y, H, Gamma, U, V)
-	return subtle.ConstantTimeCompare(cBytes, cPrime.Bytes()[:16]) == 1, nil
+	return Gamma, subtle.ConstantTimeCompare(cBytes, cPrime.Bytes()[:16]) == 1, nil
 }
 
 func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
@@ -488,7 +481,11 @@ func proofToHash(pi []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	output := proofToHashPoint(Gamma)
+	return output[:], nil
+}
 
+func proofToHashPoint(Gamma *edwards25519.Point) Output {
 	var input [35]byte
 	input[0] = vrfSuite
 	input[1] = 0x03
@@ -496,8 +493,7 @@ func proofToHash(pi []byte) ([]byte, error) {
 	copy(input[2:], Gamma.Bytes())
 	input[34] = 0x00
 
-	sum := sha512.Sum512(input[:])
-	return sum[:], nil
+	return Output(sha512.Sum512(input[:]))
 }
 
 func isSmallOrder(p *edwards25519.Point) bool {

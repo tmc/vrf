@@ -150,6 +150,23 @@ func TestVerificationDoubleScalarOperation(t *testing.T) {
 	}
 }
 
+func TestProofToHashValidation(t *testing.T) {
+	proof := decodeHex(t, rfcVectors[0].proof)
+	want := decodeHex(t, rfcVectors[0].output)
+	got, err := proofToHash(proof)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Fatalf("proofToHash = %x, want %x", got, want)
+	}
+
+	invalid := bytes.Repeat([]byte{0xff}, ProofSize)
+	if _, err := proofToHash(invalid); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("proofToHash error = %v, want %v", err, ErrInvalidProof)
+	}
+}
+
 var rfcVectors = []struct {
 	name      string
 	seed      string
