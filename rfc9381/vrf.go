@@ -181,11 +181,13 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 
 // Prove generates a VRF proof for message.
 func (sk PrivateKey) Prove(message []byte) (Proof, error) {
-	Y, x, truncatedHash, err := sk.expand()
-	if err != nil {
+	var Y edwards25519.Point
+	var x edwards25519.Scalar
+	var truncatedHash [32]byte
+	if err := sk.expand(&Y, &x, &truncatedHash); err != nil {
 		return Proof{}, err
 	}
-	return vrfProve(Y, x, truncatedHash, message)
+	return vrfProve(&Y, &x, truncatedHash, message)
 }
 
 // Verify verifies proof over message and returns the VRF output if valid.
@@ -196,16 +198,15 @@ func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
 	return vrfVerifyAndHash(pk[:], proof[:], message)
 }
 
-func (sk PrivateKey) expand() (*edwards25519.Point, *edwards25519.Scalar, []byte, error) {
+func (sk PrivateKey) expand(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash *[32]byte) error {
 	h := sha512.Sum512(sk[:SeedSize])
-	x := edwards25519.NewScalar()
 	x.SetBytesWithClamping(h[:32])
 
-	Y := edwards25519.NewIdentityPoint()
 	if _, err := Y.SetBytes(sk[SeedSize:]); err != nil {
-		return nil, nil, nil, fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
+		return fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
 	}
-	return Y, x, h[32:], nil
+	copy(truncatedHash[:], h[32:])
+	return nil
 }
 
 func vrfVerifyAndHash(pk, proof, message []byte) (Output, error) {
@@ -228,7 +229,7 @@ func vrfVerifyAndHash(pk, proof, message []byte) (Output, error) {
 	return proofToHashPoint(&Gamma), nil
 }
 
-func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byte, message []byte) (Proof, error) {
+func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash [32]byte, message []byte) (Proof, error) {
 	var proof Proof
 
 	var H edwards25519.Point
@@ -236,11 +237,14 @@ func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byt
 		return Proof{}, err
 	}
 	Gamma := new(edwards25519.Point).ScalarMult(x, &H)
-	k := nonceGeneration(truncatedHash, &H)
-	kB := new(edwards25519.Point).ScalarBaseMult(k)
-	kH := new(edwards25519.Point).ScalarMult(k, &H)
-	c := challenge(Y, &H, Gamma, kB, kH)
-	s := edwards25519.NewScalar().MultiplyAdd(c, x, k)
+	var k edwards25519.Scalar
+	nonceGeneration(&k, truncatedHash, &H)
+	kB := new(edwards25519.Point).ScalarBaseMult(&k)
+	kH := new(edwards25519.Point).ScalarMult(&k, &H)
+	var c edwards25519.Scalar
+	challenge(&c, Y, &H, Gamma, kB, kH)
+	var s edwards25519.Scalar
+	s.MultiplyAdd(&c, x, &k)
 
 	copy(proof[:], Gamma.Bytes())
 	copy(proof[32:], c.Bytes()[:16])
@@ -259,18 +263,20 @@ func vrfVerify(Gamma, Y *edwards25519.Point, pi []byte, message []byte) (bool, e
 	if err := encodeToCurve(&H, Y, message); err != nil {
 		return false, err
 	}
-	c := scalarFromTruncated(cBytes)
+	var c edwards25519.Scalar
+	scalarFromTruncated(&c, cBytes)
 
 	// Y, c, and s are all derived from public inputs, so using variable-time
 	// multiplication here does not reveal secret material.
-	negC := new(edwards25519.Scalar).Negate(c)
+	negC := new(edwards25519.Scalar).Negate(&c)
 	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, &s)
 
 	sH := new(edwards25519.Point).ScalarMult(&s, &H)
-	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
+	cGamma := new(edwards25519.Point).ScalarMult(&c, Gamma)
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
-	cPrime := challenge(Y, &H, Gamma, U, V)
+	var cPrime edwards25519.Scalar
+	challenge(&cPrime, Y, &H, Gamma, U, V)
 	return subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
 }
 
@@ -463,16 +469,16 @@ func expandMessageXMD48(parts ...[]byte) [48]byte {
 	return out
 }
 
-func nonceGeneration(truncatedHash []byte, H *edwards25519.Point) *edwards25519.Scalar {
+func nonceGeneration(out *edwards25519.Scalar, truncatedHash [32]byte, H *edwards25519.Point) {
 	h := sha512.New()
-	h.Write(truncatedHash)
+	h.Write(truncatedHash[:])
 	h.Write(H.Bytes())
-	k := edwards25519.NewScalar()
-	k.SetUniformBytes(h.Sum(nil))
-	return k
+	var sum [sha512.Size]byte
+	h.Sum(sum[:0])
+	out.SetUniformBytes(sum[:])
 }
 
-func challenge(P1, P2, P3, P4, P5 *edwards25519.Point) *edwards25519.Scalar {
+func challenge(out *edwards25519.Scalar, P1, P2, P3, P4, P5 *edwards25519.Point) {
 	var input [2 + 32*5 + 1]byte
 	input[0] = vrfSuite
 	input[1] = 0x02
@@ -486,17 +492,15 @@ func challenge(P1, P2, P3, P4, P5 *edwards25519.Point) *edwards25519.Scalar {
 	sum := sha512.Sum512(input[:])
 	var truncated [16]byte
 	copy(truncated[:], sum[:16])
-	return scalarFromTruncated(truncated)
+	scalarFromTruncated(out, truncated)
 }
 
-func scalarFromTruncated(b [16]byte) *edwards25519.Scalar {
+func scalarFromTruncated(out *edwards25519.Scalar, b [16]byte) {
 	var s [32]byte
 	copy(s[:], b[:])
-	out := edwards25519.NewScalar()
 	if _, err := out.SetCanonicalBytes(s[:]); err != nil {
 		panic("vrf: invalid truncated scalar")
 	}
-	return out
 }
 
 func decodeProof(Gamma *edwards25519.Point, s *edwards25519.Scalar, pi []byte) ([16]byte, error) {
