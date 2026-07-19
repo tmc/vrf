@@ -167,6 +167,26 @@ func TestProofToHashValidation(t *testing.T) {
 	}
 }
 
+func TestExpandMessageXMDSHA512(t *testing.T) {
+	dst := []byte("QUUX-V01-CS02-with-expander-SHA512-256")
+	want := decodeHex(t, "0da749f12fbe5483eb066a5f595055679b976e93abe9be6f0f6318bce7aca8dc")
+	got := expandMessageXMD([]byte("abc"), dst, len(want))
+	if !bytes.Equal(got, want) {
+		t.Fatalf("expandMessageXMD = %x, want %x", got, want)
+	}
+}
+
+func TestExpandMessageXMD48(t *testing.T) {
+	for _, size := range []int{0, 3, 64, 1024, 4096} {
+		msg := bytes.Repeat([]byte{0x5a}, size)
+		want := expandMessageXMD(msg, hashToCurveDST, 48)
+		got := expandMessageXMD48(msg)
+		if !bytes.Equal(got[:], want) {
+			t.Fatalf("size %d: expandMessageXMD48 = %x, want %x", size, got, want)
+		}
+	}
+}
+
 var rfcVectors = []struct {
 	name      string
 	seed      string

@@ -28,6 +28,8 @@ const (
 
 	vrfSuite = 0x04
 
+	hashToCurveDSTString = "ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04"
+
 	// SuiteString identifies the RFC 9381 suite implemented by this package.
 	SuiteString = "ECVRF-EDWARDS25519-SHA512-ELL2 (RFC 9381)"
 )
@@ -59,7 +61,7 @@ type Proof [ProofSize]byte
 type Output [OutputSize]byte
 
 var (
-	hashToCurveDST    = []byte("ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04")
+	hashToCurveDST    = []byte(hashToCurveDSTString)
 	oneFE             = new(field.Element).One()
 	curve25519J       = new(field.Element).Mult32(oneFE, 486662)
 	negCurve25519J    = new(field.Element).Negate(curve25519J)
@@ -287,9 +289,8 @@ func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, 
 }
 
 func hashToField(msg []byte) (*field.Element, error) {
-	const L = 48
-	uniform := expandMessageXMD(msg, hashToCurveDST, L)
-	return fieldFromWideBytes(uniform)
+	uniform := expandMessageXMD48(msg)
+	return fieldFromWideBytes(uniform[:])
 }
 
 func fieldFromWideBytes(in []byte) (*field.Element, error) {
@@ -419,6 +420,36 @@ func expandMessageXMD(msg, dst []byte, lenInBytes int) []byte {
 		out = append(out, bi...)
 	}
 	return out[:lenInBytes]
+}
+
+func expandMessageXMD48(msg []byte) [48]byte {
+	var zPad [128]byte
+	var dstPrime [len(hashToCurveDSTString) + 1]byte
+	copy(dstPrime[:], hashToCurveDSTString)
+	dstPrime[len(hashToCurveDSTString)] = byte(len(hashToCurveDSTString))
+	lenStr := [2]byte{0, 48}
+	zero := [1]byte{0}
+	one := [1]byte{1}
+
+	h := sha512.New()
+	h.Write(zPad[:])
+	h.Write(msg)
+	h.Write(lenStr[:])
+	h.Write(zero[:])
+	h.Write(dstPrime[:])
+	var b0 [sha512.Size]byte
+	h.Sum(b0[:0])
+
+	h.Reset()
+	h.Write(b0[:])
+	h.Write(one[:])
+	h.Write(dstPrime[:])
+	var b1 [sha512.Size]byte
+	h.Sum(b1[:0])
+
+	var out [48]byte
+	copy(out[:], b1[:48])
+	return out
 }
 
 func nonceGeneration(truncatedHash []byte, H *edwards25519.Point) *edwards25519.Scalar {
