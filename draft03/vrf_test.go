@@ -317,40 +317,54 @@ func TestOutputPrefixUint64(t *testing.T) {
 }
 
 func BenchmarkVRFProve(b *testing.B) {
-	var seed [32]byte
-	if _, err := rand.Read(seed[:]); err != nil {
-		b.Fatal(err)
-	}
+	seed, message := benchmarkVRFFixture(0)
 	_, sk := keygen(seed)
-	message := []byte("benchmark message")
 
+	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := sk.Prove(message)
+		proof, err := sk.Prove(message)
 		if err != nil {
 			b.Fatal(err)
 		}
+		benchmarkProof = proof
 	}
 }
 
 func BenchmarkVRFVerify(b *testing.B) {
-	var seed [32]byte
-	if _, err := rand.Read(seed[:]); err != nil {
-		b.Fatal(err)
-	}
+	seed, message := benchmarkVRFFixture(0)
 	pk, sk := keygen(seed)
-	message := []byte("benchmark message")
 
 	proof, err := sk.Prove(message)
 	if err != nil {
 		b.Fatal(err)
 	}
 
+	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := pk.Verify(proof, message)
+		output, err := pk.Verify(proof, message)
 		if err != nil {
 			b.Fatal(err)
 		}
+		benchmarkOutput = output
 	}
+}
+
+var (
+	benchmarkProof  Proof
+	benchmarkOutput Output
+)
+
+func benchmarkVRFFixture(index int) ([SeedSize]byte, []byte) {
+	var seed [SeedSize]byte
+	for i := range seed {
+		seed[i] = byte(index + i*31)
+	}
+
+	message := make([]byte, 100)
+	for i := range message {
+		message[i] = byte(index*17 + i*29)
+	}
+	return seed, message
 }
