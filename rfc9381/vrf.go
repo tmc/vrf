@@ -269,7 +269,7 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
 	cPrime := challenge(Y, H, Gamma, U, V)
-	return Gamma, subtle.ConstantTimeCompare(cBytes, cPrime.Bytes()[:16]) == 1, nil
+	return Gamma, subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
 }
 
 func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
@@ -471,12 +471,14 @@ func challenge(P1, P2, P3, P4, P5 *edwards25519.Point) *edwards25519.Scalar {
 	input[162] = 0x00
 
 	sum := sha512.Sum512(input[:])
-	return scalarFromTruncated(sum[:16])
+	var truncated [16]byte
+	copy(truncated[:], sum[:16])
+	return scalarFromTruncated(truncated)
 }
 
-func scalarFromTruncated(b []byte) *edwards25519.Scalar {
+func scalarFromTruncated(b [16]byte) *edwards25519.Scalar {
 	var s [32]byte
-	copy(s[:], b)
+	copy(s[:], b[:])
 	out := edwards25519.NewScalar()
 	if _, err := out.SetCanonicalBytes(s[:]); err != nil {
 		panic("vrf: invalid truncated scalar")
@@ -484,22 +486,22 @@ func scalarFromTruncated(b []byte) *edwards25519.Scalar {
 	return out
 }
 
-func decodeProof(pi []byte) (*edwards25519.Point, []byte, *edwards25519.Scalar, error) {
+func decodeProof(pi []byte) (*edwards25519.Point, [16]byte, *edwards25519.Scalar, error) {
+	var c [16]byte
 	if len(pi) != ProofSize {
-		return nil, nil, nil, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
+		return nil, c, nil, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
 	}
 
 	Gamma := new(edwards25519.Point)
 	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
-		return nil, nil, nil, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
+		return nil, c, nil, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
 	}
 
-	c := make([]byte, 16)
-	copy(c, pi[32:48])
+	copy(c[:], pi[32:48])
 
 	s := edwards25519.NewScalar()
 	if _, err := s.SetCanonicalBytes(pi[48:80]); err != nil {
-		return nil, nil, nil, fmt.Errorf("%w: non-canonical scalar", ErrInvalidProof)
+		return nil, c, nil, fmt.Errorf("%w: non-canonical scalar", ErrInvalidProof)
 	}
 
 	return Gamma, c, s, nil
