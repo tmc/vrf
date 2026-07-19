@@ -180,9 +180,11 @@ func TestExpandMessageXMD48(t *testing.T) {
 	for _, size := range []int{0, 3, 64, 1024, 4096} {
 		msg := bytes.Repeat([]byte{0x5a}, size)
 		want := expandMessageXMD(msg, hashToCurveDST, 48)
-		got := expandMessageXMD48(msg)
-		if !bytes.Equal(got[:], want) {
-			t.Fatalf("size %d: expandMessageXMD48 = %x, want %x", size, got, want)
+		for _, split := range []int{0, len(msg) / 2, len(msg)} {
+			got := expandMessageXMD48(msg[:split], msg[split:])
+			if !bytes.Equal(got[:], want) {
+				t.Fatalf("size %d, split %d: expandMessageXMD48 = %x, want %x", size, split, got, want)
+			}
 		}
 	}
 }

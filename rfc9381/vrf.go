@@ -273,11 +273,7 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.
 }
 
 func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
-	msg := make([]byte, 0, PublicKeySize+len(message))
-	msg = append(msg, Y.Bytes()...)
-	msg = append(msg, message...)
-
-	u, err := hashToField(msg)
+	u, err := hashToField(Y.Bytes(), message)
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +284,8 @@ func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, 
 	return new(edwards25519.Point).MultByCofactor(Q), nil
 }
 
-func hashToField(msg []byte) (*field.Element, error) {
-	uniform := expandMessageXMD48(msg)
+func hashToField(parts ...[]byte) (*field.Element, error) {
+	uniform := expandMessageXMD48(parts...)
 	return fieldFromWideBytes(uniform[:])
 }
 
@@ -422,7 +418,7 @@ func expandMessageXMD(msg, dst []byte, lenInBytes int) []byte {
 	return out[:lenInBytes]
 }
 
-func expandMessageXMD48(msg []byte) [48]byte {
+func expandMessageXMD48(parts ...[]byte) [48]byte {
 	var zPad [128]byte
 	var dstPrime [len(hashToCurveDSTString) + 1]byte
 	copy(dstPrime[:], hashToCurveDSTString)
@@ -433,7 +429,9 @@ func expandMessageXMD48(msg []byte) [48]byte {
 
 	h := sha512.New()
 	h.Write(zPad[:])
-	h.Write(msg)
+	for _, part := range parts {
+		h.Write(part)
+	}
 	h.Write(lenStr[:])
 	h.Write(zero[:])
 	h.Write(dstPrime[:])

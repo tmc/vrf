@@ -146,11 +146,11 @@ func BenchmarkRFC9381InternalHashToField(b *testing.B) {
 	pub, _ := benchmarkKey(b)
 	for _, size := range benchmarkMessageSizes {
 		b.Run(size.name, func(b *testing.B) {
-			message := append(pub[:], benchmarkMessage(size.size)...)
+			message := benchmarkMessage(size.size)
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				element, err := hashToField(message)
+				element, err := hashToField(pub[:], message)
 				if err != nil {
 					b.Fatal(err)
 				}
