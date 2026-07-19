@@ -1,19 +1,21 @@
 # VRF
 
 Package vrf implements the ECVRF-EDWARDS25519-SHA512-ELL2 verifiable random
-function (suite 0x04) from draft-irtf-cfrg-vrf-03.
+function (suite 0x04) from RFC 9381, the final published standard.
 
-This is the suite used by Algorand's consensus layer. Proofs and outputs are
-byte-identical to Algorand's libsodium fork, checked against verify vectors
-taken from Algorand's implementation (`vrf_parity_test.go`). RFC 9381 kept the
-same suite byte (0x04) but changed hash-to-curve and challenge construction
-incompatibly, so it ships as a separate package.
+The root package is the default entry point and re-exports
+`github.com/tmc/vrf/rfc9381`. RFC 9381 kept the suite byte (0x04) used by the
+earlier draft-irtf-cfrg-vrf-03 but changed hash-to-curve and challenge
+construction incompatibly, so the draft-03 suite ships as a separate package.
 
 ## Packages
 
-- `github.com/tmc/vrf`: draft-03 implementation (Algorand-compatible).
-- `github.com/tmc/vrf/draft03`: explicit import path for the same draft-03 implementation.
+- `github.com/tmc/vrf`: RFC 9381 implementation (default; re-exports `rfc9381`).
 - `github.com/tmc/vrf/rfc9381`: RFC 9381 implementation.
+- `github.com/tmc/vrf/draft03`: draft-03 implementation, used by Algorand's
+  consensus layer. Proofs and outputs are byte-identical to Algorand's
+  libsodium fork, checked against verify vectors taken from Algorand's
+  implementation (`draft03/vrf_parity_test.go`).
 
 ## Usage
 
@@ -34,9 +36,8 @@ proof, err := sk.Prove(message)
 output, err := vrf.Verify(pk, message, proof)
 ```
 
-For new code that must make the suite explicit, import
-`github.com/tmc/vrf/draft03` or `github.com/tmc/vrf/rfc9381`. Each package uses
-distinct named proof and key types, so a draft-03 proof cannot be passed to the
-RFC 9381 verifier by accident.
+For Algorand-compatible proofs, import `github.com/tmc/vrf/draft03`. Its proof
+and key types are distinct from the RFC 9381 types, so a draft-03 proof cannot
+be passed to an RFC 9381 verifier by accident.
 
 See package documentation for details.

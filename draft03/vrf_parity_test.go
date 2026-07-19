@@ -1,4 +1,4 @@
-package vrf
+package draft03
 
 import (
 	"bytes"

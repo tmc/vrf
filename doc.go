@@ -1,15 +1,16 @@
 // Package vrf implements the ECVRF-EDWARDS25519-SHA512-ELL2 verifiable random
-// function (suite 0x04) from draft-irtf-cfrg-vrf-03.
+// function (suite 0x04) from RFC 9381.
 //
-// This is the suite used by Algorand's consensus layer. Proofs and outputs are
-// byte-identical to Algorand's libsodium fork: the package is checked against
-// verify vectors taken from Algorand's implementation (see the parity test).
+// This package is the default entry point: it re-exports
+// github.com/tmc/vrf/rfc9381, the final published standard. Its types are
+// aliases of the rfc9381 types, so vrf.Proof and rfc9381.Proof are
+// interchangeable.
 //
-// Suite 0x04 is shared with the final RFC 9381 suite, but the two changed
-// hash-to-curve and challenge construction incompatibly. This package
-// implements draft-03; for RFC 9381, use github.com/tmc/vrf/rfc9381. To make
-// the draft-03 suite explicit at the import site, use
-// github.com/tmc/vrf/draft03, which re-exports this package.
+// RFC 9381 kept the suite byte 0x04 used by the earlier draft-irtf-cfrg-vrf-03
+// but changed hash-to-curve and challenge construction incompatibly. For the
+// draft-03 suite used by Algorand's consensus layer, use
+// github.com/tmc/vrf/draft03, whose proof and key types are distinct so a
+// draft-03 proof cannot be passed to an RFC 9381 verifier by accident.
 //
 // Basic use:
 //

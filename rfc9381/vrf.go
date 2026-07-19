@@ -34,16 +34,16 @@ const (
 
 var (
 	// ErrInvalidPublicKey reports a malformed public key.
-	ErrInvalidPublicKey = errors.New("rfc9381: invalid public key")
+	ErrInvalidPublicKey = errors.New("vrf: invalid public key")
 
 	// ErrSmallOrderPoint reports a public key with small order.
-	ErrSmallOrderPoint = errors.New("rfc9381: public key is a small-order point")
+	ErrSmallOrderPoint = errors.New("vrf: public key is a small-order point")
 
 	// ErrInvalidProof reports a malformed VRF proof.
-	ErrInvalidProof = errors.New("rfc9381: invalid proof")
+	ErrInvalidProof = errors.New("vrf: invalid proof")
 
 	// ErrVerifyFailed reports a proof that does not verify.
-	ErrVerifyFailed = errors.New("rfc9381: proof verification failed")
+	ErrVerifyFailed = errors.New("vrf: proof verification failed")
 )
 
 // PublicKey represents an RFC 9381 VRF public key.
@@ -109,7 +109,7 @@ func ParseProof(b []byte) (Proof, error) {
 // It panics if len(seed) is not SeedSize, matching crypto/ed25519.NewKeyFromSeed.
 func NewKeyFromSeed(seed []byte) PrivateKey {
 	if len(seed) != SeedSize {
-		panic("rfc9381: bad seed length")
+		panic("vrf: bad seed length")
 	}
 	var fixed [SeedSize]byte
 	copy(fixed[:], seed)
@@ -375,7 +375,7 @@ func sqrtMinus486664() *field.Element {
 	minus486664 := new(field.Element).Negate(new(field.Element).Mult32(oneFE, 486664))
 	c, wasSquare := new(field.Element).SqrtRatio(minus486664, oneFE)
 	if wasSquare != 1 {
-		panic("rfc9381: sqrt(-486664) does not exist")
+		panic("vrf: sqrt(-486664) does not exist")
 	}
 	if sgn0(c) == 1 {
 		c.Negate(c)
@@ -400,7 +400,7 @@ func expandMessageXMD(msg, dst []byte, lenInBytes int) []byte {
 	const rInBytes = 128
 	ell := (lenInBytes + bInBytes - 1) / bInBytes
 	if ell > 255 {
-		panic("rfc9381: expand_message_xmd output too long")
+		panic("vrf: expand_message_xmd output too long")
 	}
 
 	dstPrime := make([]byte, len(dst)+1)
@@ -456,7 +456,7 @@ func scalarFromTruncated(b []byte) *edwards25519.Scalar {
 	copy(s[:], b)
 	out := edwards25519.NewScalar()
 	if _, err := out.SetCanonicalBytes(s[:]); err != nil {
-		panic("rfc9381: invalid truncated scalar")
+		panic("vrf: invalid truncated scalar")
 	}
 	return out
 }
