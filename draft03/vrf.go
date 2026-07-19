@@ -180,8 +180,9 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 
 // Prove generates a VRF proof for the given message
 func (sk PrivateKey) Prove(message []byte) (Proof, error) {
-	xScalar, truncHashedSk := sk.expand()
-	return vrfProve(sk[32:], xScalar, truncHashedSk, message)
+	var xScalar edwards25519.Scalar
+	truncHashedSk := sk.expand(&xScalar)
+	return vrfProve(sk[32:], &xScalar, truncHashedSk, message)
 }
 
 // Verify verifies proof over message and returns the VRF output if valid.
@@ -194,16 +195,15 @@ func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
 
 // expand converts a private key into the private scalar x and truncated hash
 // for nonce generation.
-func (sk PrivateKey) expand() (*edwards25519.Scalar, [32]byte) {
+func (sk PrivateKey) expand(xScalar *edwards25519.Scalar) [32]byte {
 	hSum := sha512.Sum512(sk[:32])
 
-	xScalar := edwards25519.NewScalar()
 	xScalar.SetBytesWithClamping(hSum[:32])
 
 	var truncHashedSk [32]byte
 	copy(truncHashedSk[:], hSum[32:])
 
-	return xScalar, truncHashedSk
+	return truncHashedSk
 }
 
 // vrfVerifyAndHash verifies a VRF proof and returns the output hash
@@ -237,33 +237,36 @@ func vrfProve(YBytes []byte, xScalar *edwards25519.Scalar, truncHashedSk [32]byt
 	var proof Proof
 
 	// Hash message to curve point
-	H, HBytes, err := hashToCurve(YBytes, message)
+	var H edwards25519.Point
+	HBytes, err := hashToCurve(&H, YBytes, message)
 	if err != nil {
 		return Proof{}, err
 	}
 
 	// Gamma = x * H
-	Gamma := new(edwards25519.Point).ScalarMult(xScalar, H)
+	Gamma := new(edwards25519.Point).ScalarMult(xScalar, &H)
 	GammaBytes := pointBytes(Gamma)
 
 	// Generate nonce
-	k := nonceGeneration(truncHashedSk, HBytes)
+	var k edwards25519.Scalar
+	nonceGeneration(&k, truncHashedSk, HBytes)
 
 	// kB = k * B (base point)
-	kB := edwards25519.NewIdentityPoint().ScalarBaseMult(k)
+	kB := edwards25519.NewIdentityPoint().ScalarBaseMult(&k)
 	kBBytes := pointBytes(kB)
 
 	// kH = k * H
-	kH := edwards25519.NewIdentityPoint().ScalarMult(k, H)
+	kH := edwards25519.NewIdentityPoint().ScalarMult(&k, &H)
 	kHBytes := pointBytes(kH)
 
 	// c = hash_points(H, Gamma, kB, kH)
-	c := hashPoints(HBytes, GammaBytes, kBBytes, kHBytes)
+	var c edwards25519.Scalar
+	hashPoints(&c, HBytes, GammaBytes, kBBytes, kHBytes)
 
 	// s = c*x + k (mod q)
-	s := edwards25519.NewScalar()
-	s.Multiply(c, xScalar)
-	s.Add(s, k)
+	var s edwards25519.Scalar
+	s.Multiply(&c, xScalar)
+	s.Add(&s, &k)
 
 	// Encode proof as Gamma || c (16 bytes) || s
 	copy(proof[:], GammaBytes[:])
@@ -274,7 +277,7 @@ func vrfProve(YBytes []byte, xScalar *edwards25519.Scalar, truncHashedSk [32]byt
 }
 
 // hashToCurve hashes a message to a curve point using Elligator2
-func hashToCurve(YBytes []byte, message []byte) (*edwards25519.Point, [32]byte, error) {
+func hashToCurve(out *edwards25519.Point, YBytes []byte, message []byte) ([32]byte, error) {
 	h := sha512.New()
 	h.Write([]byte{vrfSuite})
 	h.Write([]byte{1})
@@ -285,11 +288,11 @@ func hashToCurve(YBytes []byte, message []byte) (*edwards25519.Point, [32]byte, 
 	h.Sum(rString[:0])
 	rString[31] &= 0x7f // clear sign bit
 
-	return elligator2(rString[:])
+	return elligator2(out, rString[:])
 }
 
 // elligator2 implements the Elligator2 map from uniform bytes to Edwards25519 point
-func elligator2(r []byte) (*edwards25519.Point, [32]byte, error) {
+func elligator2(p *edwards25519.Point, r []byte) ([32]byte, error) {
 	var out [32]byte
 	var s [32]byte
 	copy(s[:], r[:32])
@@ -323,7 +326,7 @@ func elligator2(r []byte) (*edwards25519.Point, [32]byte, error) {
 	e.Add(x2, e)
 
 	// Check if e is a quadratic residue
-	e = chi25519(e)
+	chi25519(e, e)
 	eBytes := e.Bytes()
 
 	eIsMinus1 := int(eBytes[1] & 1)
@@ -346,32 +349,28 @@ func elligator2(r []byte) (*edwards25519.Point, [32]byte, error) {
 	s[31] |= xSign
 
 	// Decode as Edwards point and multiply by cofactor
-	p3 := &edwards25519.Point{}
-	if _, err := p3.SetBytes(s[:]); err != nil {
-		return nil, out, err
+	if _, err := p.SetBytes(s[:]); err != nil {
+		return out, err
 	}
 
-	p3.MultByCofactor(p3)
-	copy(out[:], p3.Bytes())
-	return p3, out, nil
+	p.MultByCofactor(p)
+	copy(out[:], p.Bytes())
+	return out, nil
 }
 
 // nonceGeneration generates a deterministic nonce for VRF proving
-func nonceGeneration(truncHashedSk [32]byte, HBytes [32]byte) *edwards25519.Scalar {
+func nonceGeneration(k *edwards25519.Scalar, truncHashedSk [32]byte, HBytes [32]byte) {
 	h := sha512.New()
 	h.Write(truncHashedSk[:])
 	h.Write(HBytes[:])
 
 	var kBytes [sha512.Size]byte
 	h.Sum(kBytes[:0])
-	k := edwards25519.NewScalar()
 	k.SetUniformBytes(kBytes[:])
-
-	return k
 }
 
 // hashPoints hashes four encoded points to produce a scalar challenge.
-func hashPoints(P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) *edwards25519.Scalar {
+func hashPoints(scalar *edwards25519.Scalar, P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) {
 	var input [2 + 32*4]byte
 
 	input[0] = vrfSuite
@@ -387,21 +386,15 @@ func hashPoints(P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) *edwards25519.Scala
 	var result [32]byte
 	copy(result[:], sum[:16])
 
-	scalar := edwards25519.NewScalar()
 	if _, err := scalar.SetCanonicalBytes(result[:]); err != nil {
 		// Unreachable: result is 16 bytes zero-padded to 32, always < the
 		// group order, so it is always canonical.
 		panic("vrf: invalid scalar from hash")
 	}
-
-	return scalar
 }
 
 // chi25519 computes the Legendre symbol for field elements (quadratic residue test)
-func chi25519(z *field.Element) *field.Element {
-	out := &field.Element{}
-	out.Set(z)
-
+func chi25519(out, z *field.Element) {
 	var t0, t1, t2, t3 *field.Element
 
 	t0 = &field.Element{}
@@ -464,8 +457,6 @@ func chi25519(z *field.Element) *field.Element {
 		t1.Square(t1)
 	}
 	out.Multiply(t1, t0)
-
-	return out
 }
 
 // vrfVerify verifies a VRF proof
@@ -477,7 +468,8 @@ func vrfVerify(YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) 
 	}
 
 	// Hash message to curve
-	H, HBytes, err := hashToCurve(YBytes, message)
+	var H edwards25519.Point
+	HBytes, err := hashToCurve(&H, YBytes, message)
 	if err != nil {
 		return false, err
 	}
@@ -501,13 +493,14 @@ func vrfVerify(YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) 
 
 	// V = s*H - c*Gamma
 	scalars := [...]*edwards25519.Scalar{cNeg, s}
-	points := [...]*edwards25519.Point{Gamma, H}
+	points := [...]*edwards25519.Point{Gamma, &H}
 	V := new(edwards25519.Point).VarTimeMultiScalarMult(scalars[:], points[:])
 
 	// cprime = hash_points(H, Gamma, U, V)
 	var GammaBytes [32]byte
 	copy(GammaBytes[:], pi[:32])
-	cprime := hashPoints(HBytes, GammaBytes, pointBytes(U), pointBytes(V))
+	var cprime edwards25519.Scalar
+	hashPoints(&cprime, HBytes, GammaBytes, pointBytes(U), pointBytes(V))
 
 	// Verify c == cprime (first 16 bytes)
 	return subtle.ConstantTimeCompare(cBytes[:], cprime.Bytes()[:16]) == 1, nil
