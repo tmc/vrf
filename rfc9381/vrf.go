@@ -217,14 +217,15 @@ func vrfVerifyAndHash(pk, proof, message []byte) (Output, error) {
 		return Output{}, ErrSmallOrderPoint
 	}
 
-	Gamma, ok, err := vrfVerify(Y, proof, message)
+	var Gamma edwards25519.Point
+	ok, err := vrfVerify(&Gamma, Y, proof, message)
 	if err != nil {
 		return Output{}, err
 	}
 	if !ok {
 		return Output{}, ErrVerifyFailed
 	}
-	return proofToHashPoint(Gamma), nil
+	return proofToHashPoint(&Gamma), nil
 }
 
 func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byte, message []byte) (Proof, error) {
@@ -247,17 +248,16 @@ func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byt
 	return proof, nil
 }
 
-func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.Point, bool, error) {
-	var Gamma edwards25519.Point
+func vrfVerify(Gamma, Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	var s edwards25519.Scalar
-	cBytes, err := decodeProof(&Gamma, &s, pi)
+	cBytes, err := decodeProof(Gamma, &s, pi)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	H, err := encodeToCurve(Y, message)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	c := scalarFromTruncated(cBytes)
 
@@ -267,11 +267,11 @@ func vrfVerify(Y *edwards25519.Point, pi []byte, message []byte) (*edwards25519.
 	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, &s)
 
 	sH := new(edwards25519.Point).ScalarMult(&s, H)
-	cGamma := new(edwards25519.Point).ScalarMult(c, &Gamma)
+	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
-	cPrime := challenge(Y, H, &Gamma, U, V)
-	return &Gamma, subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
+	cPrime := challenge(Y, H, Gamma, U, V)
+	return subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
 }
 
 func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
