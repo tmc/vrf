@@ -129,15 +129,15 @@ func BenchmarkRFC9381InternalEncodeToCurve(b *testing.B) {
 	for _, size := range benchmarkMessageSizes {
 		b.Run(size.name, func(b *testing.B) {
 			message := benchmarkMessage(size.size)
+			var point edwards25519.Point
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				point, err := encodeToCurve(Y, message)
-				if err != nil {
+				if err := encodeToCurve(&point, Y, message); err != nil {
 					b.Fatal(err)
 				}
-				benchmarkPoint = point
 			}
+			benchmarkPoint = &point
 		})
 	}
 }
@@ -147,15 +147,15 @@ func BenchmarkRFC9381InternalHashToField(b *testing.B) {
 	for _, size := range benchmarkMessageSizes {
 		b.Run(size.name, func(b *testing.B) {
 			message := benchmarkMessage(size.size)
+			var element field.Element
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				element, err := hashToField(pub[:], message)
-				if err != nil {
+				if err := hashToField(&element, pub[:], message); err != nil {
 					b.Fatal(err)
 				}
-				benchmarkField = element
 			}
+			benchmarkField = &element
 		})
 	}
 }
@@ -174,19 +174,19 @@ func BenchmarkRFC9381InternalExpandMessageXMD(b *testing.B) {
 }
 
 func BenchmarkRFC9381InternalMapToCurve(b *testing.B) {
-	element, err := hashToField(benchmarkMessage(64))
-	if err != nil {
+	var element field.Element
+	if err := hashToField(&element, benchmarkMessage(64)); err != nil {
 		b.Fatal(err)
 	}
+	var point edwards25519.Point
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		point, err := mapToCurve(element)
-		if err != nil {
+		if err := mapToCurve(&point, &element); err != nil {
 			b.Fatal(err)
 		}
-		benchmarkPoint = point
 	}
+	benchmarkPoint = &point
 }
 
 func BenchmarkRFC9381InternalNonceGeneration(b *testing.B) {
@@ -195,14 +195,14 @@ func BenchmarkRFC9381InternalNonceGeneration(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	H, err := encodeToCurve(Y, benchmarkMessage(64))
-	if err != nil {
+	var H edwards25519.Point
+	if err := encodeToCurve(&H, Y, benchmarkMessage(64)); err != nil {
 		b.Fatal(err)
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		benchmarkScalar = nonceGeneration(truncatedHash, H)
+		benchmarkScalar = nonceGeneration(truncatedHash, &H)
 	}
 }
 
@@ -212,15 +212,15 @@ func BenchmarkRFC9381InternalChallenge(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	H, err := encodeToCurve(Y, benchmarkMessage(64))
-	if err != nil {
+	var H edwards25519.Point
+	if err := encodeToCurve(&H, Y, benchmarkMessage(64)); err != nil {
 		b.Fatal(err)
 	}
-	Gamma := new(edwards25519.Point).ScalarMult(x, H)
+	Gamma := new(edwards25519.Point).ScalarMult(x, &H)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		benchmarkScalar = challenge(Y, H, Gamma, Y, H)
+		benchmarkScalar = challenge(Y, &H, Gamma, Y, &H)
 	}
 }
 

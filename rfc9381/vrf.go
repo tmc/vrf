@@ -231,15 +231,15 @@ func vrfVerifyAndHash(pk, proof, message []byte) (Output, error) {
 func vrfProve(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash []byte, message []byte) (Proof, error) {
 	var proof Proof
 
-	H, err := encodeToCurve(Y, message)
-	if err != nil {
+	var H edwards25519.Point
+	if err := encodeToCurve(&H, Y, message); err != nil {
 		return Proof{}, err
 	}
-	Gamma := new(edwards25519.Point).ScalarMult(x, H)
-	k := nonceGeneration(truncatedHash, H)
+	Gamma := new(edwards25519.Point).ScalarMult(x, &H)
+	k := nonceGeneration(truncatedHash, &H)
 	kB := new(edwards25519.Point).ScalarBaseMult(k)
-	kH := new(edwards25519.Point).ScalarMult(k, H)
-	c := challenge(Y, H, Gamma, kB, kH)
+	kH := new(edwards25519.Point).ScalarMult(k, &H)
+	c := challenge(Y, &H, Gamma, kB, kH)
 	s := edwards25519.NewScalar().MultiplyAdd(c, x, k)
 
 	copy(proof[:], Gamma.Bytes())
@@ -255,8 +255,8 @@ func vrfVerify(Gamma, Y *edwards25519.Point, pi []byte, message []byte) (bool, e
 		return false, err
 	}
 
-	H, err := encodeToCurve(Y, message)
-	if err != nil {
+	var H edwards25519.Point
+	if err := encodeToCurve(&H, Y, message); err != nil {
 		return false, err
 	}
 	c := scalarFromTruncated(cBytes)
@@ -266,102 +266,113 @@ func vrfVerify(Gamma, Y *edwards25519.Point, pi []byte, message []byte) (bool, e
 	negC := new(edwards25519.Scalar).Negate(c)
 	U := new(edwards25519.Point).VarTimeDoubleScalarBaseMult(negC, Y, &s)
 
-	sH := new(edwards25519.Point).ScalarMult(&s, H)
+	sH := new(edwards25519.Point).ScalarMult(&s, &H)
 	cGamma := new(edwards25519.Point).ScalarMult(c, Gamma)
 	V := new(edwards25519.Point).Subtract(sH, cGamma)
 
-	cPrime := challenge(Y, H, Gamma, U, V)
+	cPrime := challenge(Y, &H, Gamma, U, V)
 	return subtle.ConstantTimeCompare(cBytes[:], cPrime.Bytes()[:16]) == 1, nil
 }
 
-func encodeToCurve(Y *edwards25519.Point, message []byte) (*edwards25519.Point, error) {
-	u, err := hashToField(Y.Bytes(), message)
-	if err != nil {
-		return nil, err
+func encodeToCurve(out, Y *edwards25519.Point, message []byte) error {
+	var u field.Element
+	if err := hashToField(&u, Y.Bytes(), message); err != nil {
+		return err
 	}
-	Q, err := mapToCurve(u)
-	if err != nil {
-		return nil, err
+	var Q edwards25519.Point
+	if err := mapToCurve(&Q, &u); err != nil {
+		return err
 	}
-	return new(edwards25519.Point).MultByCofactor(Q), nil
+	out.MultByCofactor(&Q)
+	return nil
 }
 
-func hashToField(parts ...[]byte) (*field.Element, error) {
+func hashToField(out *field.Element, parts ...[]byte) error {
 	uniform := expandMessageXMD48(parts...)
-	return fieldFromWideBytes(uniform[:])
+	return fieldFromWideBytes(out, uniform[:])
 }
 
-func fieldFromWideBytes(in []byte) (*field.Element, error) {
+func fieldFromWideBytes(out *field.Element, in []byte) error {
 	if len(in) != 48 {
-		return nil, fmt.Errorf("hash_to_field: got %d bytes, want 48", len(in))
+		return fmt.Errorf("hash_to_field: got %d bytes, want 48", len(in))
 	}
 	var wide [64]byte
 	for i := range in {
 		wide[i] = in[len(in)-1-i]
 	}
-	u := new(field.Element)
-	if _, err := u.SetWideBytes(wide[:]); err != nil {
-		return nil, err
+	if _, err := out.SetWideBytes(wide[:]); err != nil {
+		return err
 	}
-	return u, nil
+	return nil
 }
 
-func mapToCurve(u *field.Element) (*edwards25519.Point, error) {
-	xMn, xMd, yMn, yMd := mapToCurveElligator2Curve25519(u)
+func mapToCurve(out *edwards25519.Point, u *field.Element) error {
+	var xMn, xMd, yMn, yMd field.Element
+	mapToCurveElligator2Curve25519(&xMn, &xMd, &yMn, &yMd, u)
 
-	xn := new(field.Element).Multiply(xMn, yMd)
-	xn.Multiply(xn, sqrtMinus486664FE)
-	xd := new(field.Element).Multiply(xMd, yMn)
-	yn := new(field.Element).Subtract(xMn, xMd)
-	yd := new(field.Element).Add(xMn, xMd)
+	var xn, xd, yn, yd field.Element
+	xn.Multiply(&xMn, &yMd)
+	xn.Multiply(&xn, sqrtMinus486664FE)
+	xd.Multiply(&xMd, &yMn)
+	yn.Subtract(&xMn, &xMd)
+	yd.Add(&xMn, &xMd)
 
-	if new(field.Element).Multiply(xd, yd).Equal(new(field.Element).Zero()) == 1 {
+	var product, zero field.Element
+	if product.Multiply(&xd, &yd).Equal(zero.Zero()) == 1 {
 		xn.Zero()
 		xd.One()
 		yn.One()
 		yd.One()
 	}
 
-	x := new(field.Element).Multiply(xn, new(field.Element).Invert(xd))
-	y := new(field.Element).Multiply(yn, new(field.Element).Invert(yd))
+	var x, y, inverse field.Element
+	x.Multiply(&xn, inverse.Invert(&xd))
+	y.Multiply(&yn, inverse.Invert(&yd))
 	enc := y.Bytes()
 	enc[31] &^= 0x80
-	if sgn0(x) == 1 {
+	if sgn0(&x) == 1 {
 		enc[31] |= 0x80
 	}
 
-	p := new(edwards25519.Point)
-	if _, err := p.SetBytes(enc); err != nil {
-		return nil, err
+	if _, err := out.SetBytes(enc); err != nil {
+		return err
 	}
-	return p, nil
+	return nil
 }
 
-func mapToCurveElligator2Curve25519(u *field.Element) (xn, xd, yn, yd *field.Element) {
-	tv1 := new(field.Element).Square(u)
-	tv1.Add(tv1, tv1)
-	xd = new(field.Element).Add(tv1, oneFE)
-	x1n := new(field.Element).Set(negCurve25519J)
+func mapToCurveElligator2Curve25519(xn, xd, yn, yd, u *field.Element) {
+	var tv1 field.Element
+	tv1.Square(u)
+	tv1.Add(&tv1, &tv1)
+	xd.Add(&tv1, oneFE)
 
-	invXD := new(field.Element).Invert(xd)
-	x1 := new(field.Element).Multiply(x1n, invXD)
-	x2n := new(field.Element).Multiply(x1n, tv1)
+	var x1n, invXD, x1, x2n field.Element
+	x1n.Set(negCurve25519J)
+	invXD.Invert(xd)
+	x1.Multiply(&x1n, &invXD)
+	x2n.Multiply(&x1n, &tv1)
 
-	x1Squared := new(field.Element).Square(x1)
-	gx1 := new(field.Element).Multiply(x1, x1Squared)
-	gx1.Add(gx1, new(field.Element).Multiply(curve25519J, x1Squared))
-	gx1.Add(gx1, x1)
+	var x1Squared, gx1, curveTerm field.Element
+	x1Squared.Square(&x1)
+	gx1.Multiply(&x1, &x1Squared)
+	curveTerm.Multiply(curve25519J, &x1Squared)
+	gx1.Add(&gx1, &curveTerm)
+	gx1.Add(&gx1, &x1)
 
-	gx2 := new(field.Element).Multiply(tv1, gx1)
-	y1, e2 := new(field.Element).SqrtRatio(gx1, oneFE)
-	y2, _ := new(field.Element).SqrtRatio(gx2, oneFE)
+	var gx2, y1, y2 field.Element
+	gx2.Multiply(&tv1, &gx1)
+	_, e2 := y1.SqrtRatio(&gx1, oneFE)
+	y2.SqrtRatio(&gx2, oneFE)
 
-	xn = new(field.Element).Select(x1n, x2n, e2)
-	y := new(field.Element).Select(y1, y2, e2)
-	e4 := sgn0(y)
-	y.Select(new(field.Element).Negate(y), y, e2^e4)
+	xn.Select(&x1n, &x2n, e2)
+	var y, negY field.Element
+	y.Select(&y1, &y2, e2)
+	e4 := sgn0(&y)
+	negY.Negate(&y)
+	y.Select(&negY, &y, e2^e4)
 
-	return xn, xd, y, new(field.Element).One()
+	yn.Set(&y)
+	yd.One()
 }
 
 func sqrtMinus486664() *field.Element {
