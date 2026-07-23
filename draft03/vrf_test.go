@@ -200,6 +200,40 @@ func TestVRFInvalidInputs(t *testing.T) {
 	if !errors.Is(err, ErrInvalidProof) && !errors.Is(err, ErrVerifyFailed) {
 		t.Fatalf("corrupted proof error = %v, want ErrInvalidProof or ErrVerifyFailed", err)
 	}
+
+	var zero PrivateKey
+	if _, err := zero.Prove(message); !errors.Is(err, ErrSmallOrderPoint) {
+		t.Fatalf("zero private key error = %v, want %v", err, ErrSmallOrderPoint)
+	}
+}
+
+func FuzzVerify(f *testing.F) {
+	for _, v := range algorandParityVectors {
+		publicKey, err := hex.DecodeString(v.publicKey)
+		if err != nil {
+			f.Fatal(err)
+		}
+		proof, err := hex.DecodeString(v.proof)
+		if err != nil {
+			f.Fatal(err)
+		}
+		message, err := hex.DecodeString(v.message)
+		if err != nil {
+			f.Fatal(err)
+		}
+		f.Add(publicKey, proof, message)
+	}
+	f.Fuzz(func(t *testing.T, publicKey, proof, message []byte) {
+		pk, err := ParsePublicKey(publicKey)
+		if err != nil {
+			return
+		}
+		pi, err := ParseProof(proof)
+		if err != nil {
+			return
+		}
+		Verify(pk, message, pi)
+	})
 }
 
 func TestParseAndErrorSentinels(t *testing.T) {

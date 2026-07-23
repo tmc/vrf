@@ -13,9 +13,9 @@ construction incompatibly, so the draft-03 suite ships as a separate package.
 - `github.com/tmc/vrf`: RFC 9381 implementation (default; re-exports `rfc9381`).
 - `github.com/tmc/vrf/rfc9381`: RFC 9381 implementation.
 - `github.com/tmc/vrf/draft03`: draft-03 implementation, used by Algorand's
-  consensus layer. Proofs and outputs are byte-identical to Algorand's
-  libsodium fork, checked against verify vectors taken from Algorand's
-  implementation (`draft03/vrf_parity_test.go`).
+  consensus layer. Tests compare proofs and outputs with vectors captured from
+  Algorand's implementation; they establish agreement for those cases, not
+  general interoperability (`draft03/vrf_parity_test.go`).
 
 ## Usage
 

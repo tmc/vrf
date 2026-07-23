@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	// PublicKeySize is the size of a VRF public key in bytes
+	// PublicKeySize is the size of a VRF public key in bytes.
 	PublicKeySize = 32
-	// PrivateKeySize is the size of a VRF private key in bytes
+	// PrivateKeySize is the size of a VRF private key in bytes.
 	PrivateKeySize = 64
-	// SeedSize is the size of a VRF private key seed in bytes
+	// SeedSize is the size of a VRF private key seed in bytes.
 	SeedSize = 32
-	// ProofSize is the size of a VRF proof in bytes
+	// ProofSize is the size of a VRF proof in bytes.
 	ProofSize = 80
-	// OutputSize is the size of VRF output in bytes
+	// OutputSize is the size of VRF output in bytes.
 	OutputSize = 64
 
 	// vrfSuite identifies ECVRF-EDWARDS25519-SHA512-ELL2 ciphersuite
@@ -33,16 +33,16 @@ const (
 	SuiteString = "ECVRF-ED25519-SHA512-Elligator2 (draft-03)"
 )
 
-// PublicKey represents a VRF public key
+// PublicKey represents a VRF public key.
 type PublicKey [PublicKeySize]byte
 
-// PrivateKey represents a VRF private key (32-byte seed + 32-byte public key)
+// PrivateKey represents a VRF private key (32-byte seed + 32-byte public key).
 type PrivateKey [PrivateKeySize]byte
 
-// Proof represents a VRF proof
+// Proof represents a VRF proof.
 type Proof [ProofSize]byte
 
-// Output represents VRF output hash
+// Output represents a VRF output hash.
 type Output [OutputSize]byte
 
 var (
@@ -75,15 +75,15 @@ func (o Output) PrefixUint64() uint64 {
 	return binary.BigEndian.Uint64(o[:8])
 }
 
-// GenerateKey generates a new VRF key pair using rand.
+// GenerateKey generates a new VRF key pair using random.
 //
-// If rand is nil, crypto/rand.Reader is used.
-func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {
-	if rand == nil {
-		rand = cryptorand.Reader
+// If random is nil, crypto/rand.Reader is used.
+func GenerateKey(random io.Reader) (PublicKey, PrivateKey, error) {
+	if random == nil {
+		random = cryptorand.Reader
 	}
 	var seed [SeedSize]byte
-	if _, err := io.ReadFull(rand, seed[:]); err != nil {
+	if _, err := io.ReadFull(random, seed[:]); err != nil {
 		return PublicKey{}, PrivateKey{}, fmt.Errorf("read seed: %w", err)
 	}
 	pub, priv := keygen(seed)
@@ -178,8 +178,15 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 	return pub.Verify(proof, msg)
 }
 
-// Prove generates a VRF proof for the given message
+// Prove generates a VRF proof for message.
 func (sk PrivateKey) Prove(message []byte) (Proof, error) {
+	Y := &edwards25519.Point{}
+	if _, err := Y.SetBytes(sk[SeedSize:]); err != nil {
+		return Proof{}, fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
+	}
+	if isSmallOrder(Y) {
+		return Proof{}, ErrSmallOrderPoint
+	}
 	var xScalar edwards25519.Scalar
 	truncHashedSk := sk.expand(&xScalar)
 	return vrfProve(sk[32:], &xScalar, truncHashedSk, message)
@@ -213,9 +220,7 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) (Output, error) {
 		return Output{}, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
 	}
 
-	// Check if public key has small order
-	isSmallOrder := (&edwards25519.Point{}).MultByCofactor(Y).Equal(identityPoint) == 1
-	if isSmallOrder {
+	if isSmallOrder(Y) {
 		return Output{}, ErrSmallOrderPoint
 	}
 
@@ -230,6 +235,10 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) (Output, error) {
 
 	// Convert proof to hash
 	return proofToHash(proof)
+}
+
+func isSmallOrder(p *edwards25519.Point) bool {
+	return (&edwards25519.Point{}).MultByCofactor(p).Equal(identityPoint) == 1
 }
 
 // vrfProve constructs a VRF proof for a message

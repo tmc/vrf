@@ -117,6 +117,28 @@ func TestConstructorsAndSentinels(t *testing.T) {
 	if _, err := Verify(small, []byte("message"), proof); !errors.Is(err, ErrSmallOrderPoint) {
 		t.Fatalf("small-order error = %v, want %v", err, ErrSmallOrderPoint)
 	}
+
+	var zero PrivateKey
+	if _, err := zero.Prove([]byte("message")); !errors.Is(err, ErrSmallOrderPoint) {
+		t.Fatalf("zero private key error = %v, want %v", err, ErrSmallOrderPoint)
+	}
+}
+
+func FuzzVerify(f *testing.F) {
+	for _, v := range rfcVectors {
+		f.Add(decodeHex(f, v.publicKey), decodeHex(f, v.proof), decodeHex(f, v.message))
+	}
+	f.Fuzz(func(t *testing.T, publicKey, proof, message []byte) {
+		pk, err := ParsePublicKey(publicKey)
+		if err != nil {
+			return
+		}
+		pi, err := ParseProof(proof)
+		if err != nil {
+			return
+		}
+		Verify(pk, message, pi)
+	})
 }
 
 func TestVerificationDoubleScalarOperation(t *testing.T) {
@@ -226,7 +248,7 @@ var rfcVectors = []struct {
 	},
 }
 
-func decodeHex(t *testing.T, s string) []byte {
+func decodeHex(t testing.TB, s string) []byte {
 	t.Helper()
 	b, err := hex.DecodeString(s)
 	if err != nil {

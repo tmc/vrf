@@ -68,15 +68,15 @@ var (
 	sqrtMinus486664FE = sqrtMinus486664()
 )
 
-// GenerateKey generates a new RFC 9381 VRF key pair using rand.
+// GenerateKey generates a new RFC 9381 VRF key pair using random.
 //
-// If rand is nil, crypto/rand.Reader is used.
-func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {
-	if rand == nil {
-		rand = cryptorand.Reader
+// If random is nil, crypto/rand.Reader is used.
+func GenerateKey(random io.Reader) (PublicKey, PrivateKey, error) {
+	if random == nil {
+		random = cryptorand.Reader
 	}
 	var seed [SeedSize]byte
-	if _, err := io.ReadFull(rand, seed[:]); err != nil {
+	if _, err := io.ReadFull(random, seed[:]); err != nil {
 		return PublicKey{}, PrivateKey{}, fmt.Errorf("read seed: %w", err)
 	}
 	pub, priv := keygen(seed)
@@ -204,6 +204,9 @@ func (sk PrivateKey) expand(Y *edwards25519.Point, x *edwards25519.Scalar, trunc
 
 	if _, err := Y.SetBytes(sk[SeedSize:]); err != nil {
 		return fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
+	}
+	if isSmallOrder(Y) {
+		return ErrSmallOrderPoint
 	}
 	copy(truncatedHash[:], h[32:])
 	return nil
