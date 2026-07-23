@@ -12,6 +12,8 @@ construction incompatibly, so the draft-03 suite ships as a separate package.
 
 - `github.com/tmc/vrf`: RFC 9381 implementation (default; re-exports `rfc9381`).
 - `github.com/tmc/vrf/rfc9381`: RFC 9381 implementation.
+  Tests cover RFC 9381 Appendix B.4 and custom vectors from an independent
+  Rust implementation pinned in `rfc9381/interop_test.go`.
 - `github.com/tmc/vrf/draft03`: draft-03 implementation, used by Algorand's
   consensus layer. Tests compare proofs and outputs with vectors captured from
   Algorand's implementation; they establish agreement for those cases, not
