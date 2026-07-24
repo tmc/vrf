@@ -224,8 +224,10 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) (Output, error) {
 		return Output{}, ErrSmallOrderPoint
 	}
 
-	// Verify the proof
-	ok, err := vrfVerify(pk, Y, proof, message)
+	// vrfVerify leaves the decoded and validated Gamma in Gamma, so hashing it
+	// below does not decode the proof a second time.
+	var Gamma edwards25519.Point
+	ok, err := vrfVerify(&Gamma, pk, Y, proof, message)
 	if err != nil {
 		return Output{}, err
 	}
@@ -233,8 +235,7 @@ func vrfVerifyAndHash(pk []byte, proof []byte, message []byte) (Output, error) {
 		return Output{}, ErrVerifyFailed
 	}
 
-	// Convert proof to hash
-	return proofToHash(proof)
+	return proofToHashPoint(&Gamma), nil
 }
 
 func isSmallOrder(p *edwards25519.Point) bool {
@@ -468,10 +469,11 @@ func chi25519(out, z *field.Element) {
 	out.Multiply(t1, t0)
 }
 
-// vrfVerify verifies a VRF proof
-func vrfVerify(YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
+// vrfVerify verifies a VRF proof. On success it leaves the decoded and
+// validated Gamma point in Gamma for the caller to hash.
+func vrfVerify(Gamma *edwards25519.Point, YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) (bool, error) {
 	// Decode proof
-	Gamma, cBytes, sBytes, err := decodeProof(pi)
+	cBytes, sBytes, err := decodeProof(Gamma, pi)
 	if err != nil {
 		return false, err
 	}
@@ -515,15 +517,19 @@ func vrfVerify(YBytes []byte, Y *edwards25519.Point, pi []byte, message []byte) 
 	return subtle.ConstantTimeCompare(cBytes[:], cprime.Bytes()[:16]) == 1, nil
 }
 
-// proofToHash converts a VRF proof to its output hash
+// proofToHash decodes a VRF proof and converts it to its output hash. It
+// validates the proof encoding independently of vrfVerify.
 func proofToHash(pi []byte) (Output, error) {
-	var out Output
-
-	Gamma, _, _, err := decodeProof(pi)
-	if err != nil {
-		return out, err
+	var Gamma edwards25519.Point
+	if _, _, err := decodeProof(&Gamma, pi); err != nil {
+		return Output{}, err
 	}
+	return proofToHashPoint(&Gamma), nil
+}
 
+// proofToHashPoint hashes an already decoded and validated Gamma to the VRF
+// output. It modifies Gamma in place.
+func proofToHashPoint(Gamma *edwards25519.Point) Output {
 	var hashInput [34]byte
 	hashInput[0] = vrfSuite
 	hashInput[1] = 0x03
@@ -532,23 +538,21 @@ func proofToHash(pi []byte) (Output, error) {
 	Gamma.MultByCofactor(Gamma)
 	copy(hashInput[2:], Gamma.Bytes())
 
-	sum := sha512.Sum512(hashInput[:])
-	copy(out[:], sum[:])
-	return out, nil
+	return Output(sha512.Sum512(hashInput[:]))
 }
 
-// decodeProof decodes an 80-byte VRF proof
-func decodeProof(pi []byte) (*edwards25519.Point, [16]byte, [32]byte, error) {
+// decodeProof decodes an 80-byte VRF proof, storing Gamma in the caller-owned
+// point.
+func decodeProof(Gamma *edwards25519.Point, pi []byte) ([16]byte, [32]byte, error) {
 	var c [16]byte
 	var s [32]byte
 	if len(pi) != ProofSize {
-		return nil, c, s, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
+		return c, s, fmt.Errorf("%w: proof must be %d bytes, got %d", ErrInvalidProof, ProofSize, len(pi))
 	}
 
 	// Gamma = pi[0:32]
-	Gamma := &edwards25519.Point{}
 	if _, err := Gamma.SetBytes(pi[:32]); err != nil {
-		return nil, c, s, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
+		return c, s, fmt.Errorf("%w: invalid Gamma point: %v", ErrInvalidProof, err)
 	}
 
 	// c = pi[32:48] (16 bytes)
@@ -557,7 +561,7 @@ func decodeProof(pi []byte) (*edwards25519.Point, [16]byte, [32]byte, error) {
 	// s = pi[48:80] (32 bytes)
 	copy(s[:], pi[48:80])
 
-	return Gamma, c, s, nil
+	return c, s, nil
 }
 
 func scalarBytes16(in [16]byte) [32]byte {

@@ -323,7 +323,8 @@ func TestParseAndErrorSentinels(t *testing.T) {
 		{
 			name: "truncated proof",
 			fn: func() error {
-				_, _, _, err := decodeProof(proof[:ProofSize-1])
+				var Gamma edwards25519.Point
+				_, _, err := decodeProof(&Gamma, proof[:ProofSize-1])
 				return err
 			},
 			want: ErrInvalidProof,
@@ -347,6 +348,122 @@ func TestOutputPrefixUint64(t *testing.T) {
 	want := binary.BigEndian.Uint64(out[:8])
 	if got != want {
 		t.Fatalf("PrefixUint64 = %#x, want %#x", got, want)
+	}
+}
+
+// TestProofToHashValidates checks that the standalone proofToHash still
+// decodes and validates a proof itself, independently of vrfVerify.
+func TestProofToHashValidates(t *testing.T) {
+	var seed [32]byte
+	if _, err := rand.Read(seed[:]); err != nil {
+		t.Fatal(err)
+	}
+	_, sk := keygen(seed)
+	message := []byte("proof to hash validation")
+	proof, err := sk.Prove(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name  string
+		proof []byte
+	}{
+		{"truncated", proof[:ProofSize-1]},
+		{"empty", nil},
+		{"oversized", append(append([]byte(nil), proof[:]...), 0)},
+		{"non-canonical Gamma", func() []byte {
+			bad := append([]byte(nil), proof[:]...)
+			gamma, err := hex.DecodeString("efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f")
+			if err != nil {
+				t.Fatal(err)
+			}
+			copy(bad[:32], gamma)
+			return bad
+		}()},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := proofToHash(tt.proof); !errors.Is(err, ErrInvalidProof) {
+				t.Fatalf("proofToHash error = %v, want %v", err, ErrInvalidProof)
+			}
+		})
+	}
+
+	// A well-formed proof still hashes.
+	if _, err := proofToHash(proof[:]); err != nil {
+		t.Fatalf("proofToHash(valid) = %v, want nil", err)
+	}
+}
+
+// TestVerifyReusesValidatedGamma checks that Verify, which hashes the Gamma
+// left behind by vrfVerify rather than decoding the proof a second time,
+// produces the same output as the standalone decode-and-hash path.
+func TestVerifyReusesValidatedGamma(t *testing.T) {
+	var seed [32]byte
+	if _, err := rand.Read(seed[:]); err != nil {
+		t.Fatal(err)
+	}
+	pk, sk := keygen(seed)
+
+	for _, size := range []int{0, 1, 64, 1024} {
+		message := make([]byte, size)
+		for i := range message {
+			message[i] = byte(i*31 + 7)
+		}
+		proof, err := sk.Prove(message)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := pk.Verify(proof, message)
+		if err != nil {
+			t.Fatalf("Verify(%d-byte message) = %v", size, err)
+		}
+		want, err := proofToHash(proof[:])
+		if err != nil {
+			t.Fatalf("proofToHash(%d-byte message) = %v", size, err)
+		}
+		if got != want {
+			t.Fatalf("message size %d: Verify output = %x, proofToHash = %x", size, got, want)
+		}
+	}
+}
+
+// TestVerifyRejectsBeforeHashing checks that a proof failing verification
+// returns ErrVerifyFailed and no output, so the reused Gamma is never hashed
+// for a proof that did not verify.
+func TestVerifyRejectsBeforeHashing(t *testing.T) {
+	var seed [32]byte
+	if _, err := rand.Read(seed[:]); err != nil {
+		t.Fatal(err)
+	}
+	pk, sk := keygen(seed)
+	message := []byte("reject before hashing")
+	proof, err := sk.Prove(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Flip a bit in s so the challenge no longer matches.
+	tampered := proof
+	tampered[ProofSize-1] ^= 1
+
+	out, err := pk.Verify(tampered, message)
+	if !errors.Is(err, ErrVerifyFailed) {
+		t.Fatalf("Verify(tampered) error = %v, want %v", err, ErrVerifyFailed)
+	}
+	if out != (Output{}) {
+		t.Fatalf("Verify(tampered) output = %x, want zero", out)
+	}
+
+	// Verifying against the wrong message must also fail without an output.
+	out, err = pk.Verify(proof, []byte("different message"))
+	if !errors.Is(err, ErrVerifyFailed) {
+		t.Fatalf("Verify(wrong message) error = %v, want %v", err, ErrVerifyFailed)
+	}
+	if out != (Output{}) {
+		t.Fatalf("Verify(wrong message) output = %x, want zero", out)
 	}
 }
 
