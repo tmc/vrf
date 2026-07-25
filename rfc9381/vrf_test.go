@@ -201,6 +201,52 @@ func TestExpandMessageXMDSHA512(t *testing.T) {
 	}
 }
 
+// TestExpandMessageXMDMultiBlock checks expandMessageXMD against the
+// expand_message_xmd(SHA-512) vectors in RFC 9380, Appendix K.3. Both
+// callers in this package request 48 bytes, so ell is always 1 and the
+// b_0 XOR b_(i-1) chain never runs. These vectors request 128 bytes,
+// which sets ell to 2 and covers it.
+//
+// expandMessageXMD is the oracle TestExpandMessageXMD48 compares against,
+// so it needs vectors of its own rather than a differential check alone.
+func TestExpandMessageXMDMultiBlock(t *testing.T) {
+	dst := []byte("QUUX-V01-CS02-with-expander-SHA512-256")
+	for _, v := range []struct {
+		msg  string
+		want string
+	}{
+		{
+			msg: "",
+			want: "41b037d1734a5f8df225dd8c7de38f851efdb45c372887be655212d07251b921" +
+				"b052b62eaed99b46f72f2ef4cc96bfaf254ebbbec091e1a3b9e4fb5e5b619d2e" +
+				"0c5414800a1d882b62bb5cd1778f098b8eb6cb399d5d9d18f5d5842cf5d13d7e" +
+				"b00a7cff859b605da678b318bd0e65ebff70bec88c753b159a805d2c89c55961",
+		},
+		{
+			msg: "abc",
+			want: "7f1dddd13c08b543f2e2037b14cefb255b44c83cc397c1786d975653e36a6b11" +
+				"bdd7732d8b38adb4a0edc26a0cef4bb45217135456e58fbca1703cd6032cb134" +
+				"7ee720b87972d63fbf232587043ed2901bce7f22610c0419751c065922b48843" +
+				"1851041310ad659e4b23520e1772ab29dcdeb2002222a363f0c2b1c972b3efe1",
+		},
+		{
+			msg: "abcdef0123456789",
+			want: "3f721f208e6199fe903545abc26c837ce59ac6fa45733f1baaf0222f8b7acb04" +
+				"24814fcb5eecf6c1d38f06e9d0a6ccfbf85ae612ab8735dfdf9ce84c372a77c8" +
+				"f9e1c1e952c3a61b7567dd0693016af51d2745822663d0c2367e3f4f0bed827f" +
+				"eecc2aaf98c949b5ed0d35c3f1023d64ad1407924288d366ea159f46287e61ac",
+		},
+	} {
+		t.Run(v.msg, func(t *testing.T) {
+			want := decodeHex(t, v.want)
+			got := expandMessageXMD([]byte(v.msg), dst, len(want))
+			if !bytes.Equal(got, want) {
+				t.Errorf("expandMessageXMD(%q) = %x, want %x", v.msg, got, want)
+			}
+		})
+	}
+}
+
 func TestExpandMessageXMD48(t *testing.T) {
 	for _, size := range []int{0, 3, 64, 1024, 4096} {
 		msg := bytes.Repeat([]byte{0x5a}, size)
