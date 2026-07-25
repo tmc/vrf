@@ -34,9 +34,16 @@ const (
 )
 
 // PublicKey represents a VRF public key.
+//
+// The zero value is not a usable key. Obtain one from GenerateKey,
+// ParsePublicKey, or (PrivateKey).Public.
 type PublicKey [PublicKeySize]byte
 
 // PrivateKey represents a VRF private key (32-byte seed + 32-byte public key).
+//
+// The zero value is not a usable key: its public half decodes to the identity
+// point, so Prove reports ErrSmallOrderPoint. Obtain one from GenerateKey or
+// NewKeyFromSeed.
 type PrivateKey [PrivateKeySize]byte
 
 // Proof represents a VRF proof.

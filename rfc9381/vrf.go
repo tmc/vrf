@@ -49,9 +49,16 @@ var (
 )
 
 // PublicKey represents an RFC 9381 VRF public key.
+//
+// The zero value is not a usable key. Obtain one from GenerateKey,
+// ParsePublicKey, or (PrivateKey).Public.
 type PublicKey [PublicKeySize]byte
 
 // PrivateKey represents an RFC 9381 VRF private key.
+//
+// The zero value is not a usable key: its public half decodes to the identity
+// point, so Prove reports ErrSmallOrderPoint. Obtain one from GenerateKey or
+// NewKeyFromSeed.
 type PrivateKey [PrivateKeySize]byte
 
 // Proof represents an RFC 9381 VRF proof.
