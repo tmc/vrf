@@ -201,6 +201,36 @@ func TestExpandMessageXMDSHA512(t *testing.T) {
 	}
 }
 
+// TestOutputPrefixUint64 checks the big-endian interpretation against a
+// hardcoded value rather than against binary.BigEndian, which would restate
+// the implementation and pass just as well if both switched to little-endian.
+func TestOutputPrefixUint64(t *testing.T) {
+	var out Output
+	copy(out[:], decodeHex(t, "0123456789abcdef"+
+		"00000000000000000000000000000000000000000000000000000000"))
+	if got, want := out.PrefixUint64(), uint64(0x0123456789abcdef); got != want {
+		t.Errorf("PrefixUint64 = %#016x, want %#016x", got, want)
+	}
+
+	// The first RFC 9381 Appendix B.4 vector, so the expected value is fixed
+	// by the specification and not by this implementation.
+	full := decodeHex(t, rfcVectors[0].output)
+	copy(out[:], full)
+	if got, want := out.PrefixUint64(), uint64(0x9d574bf9b8302ec0); got != want {
+		t.Errorf("PrefixUint64(%s) = %#016x, want %#016x", rfcVectors[0].name, got, want)
+	}
+
+	// Only the first 8 bytes may contribute.
+	var tail Output
+	copy(tail[:], full)
+	for i := 8; i < len(tail); i++ {
+		tail[i] ^= 0xff
+	}
+	if got, want := tail.PrefixUint64(), out.PrefixUint64(); got != want {
+		t.Errorf("PrefixUint64 changed with the tail: %#016x, want %#016x", got, want)
+	}
+}
+
 // TestExpandMessageXMDMultiBlock checks expandMessageXMD against the
 // expand_message_xmd(SHA-512) vectors in RFC 9380, Appendix K.3. Both
 // callers in this package request 48 bytes, so ell is always 1 and the
