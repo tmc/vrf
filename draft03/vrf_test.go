@@ -191,14 +191,29 @@ func TestVRFInvalidInputs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test invalid proof size
-	invalidProof := Proof{}
-	copy(invalidProof[:], validProof[:])
-	invalidProof[0] ^= 1 // Corrupt first byte
+	// A proof whose Gamma does not decode to a curve point is rejected before
+	// any verification arithmetic runs. Corrupting an arbitrary byte of Gamma
+	// only lands here about half the time, depending on the key material, so
+	// use a fixed encoding that never decodes.
+	badGamma := validProof
+	gamma, err := hex.DecodeString("efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	copy(badGamma[:32], gamma)
 
-	_, err = pk.Verify(invalidProof, message)
-	if !errors.Is(err, ErrInvalidProof) && !errors.Is(err, ErrVerifyFailed) {
-		t.Fatalf("corrupted proof error = %v, want ErrInvalidProof or ErrVerifyFailed", err)
+	_, err = pk.Verify(badGamma, message)
+	if !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("Verify(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
+	}
+
+	// A proof that decodes but carries a corrupted s fails verification.
+	badS := validProof
+	badS[ProofSize-1] ^= 1
+
+	_, err = pk.Verify(badS, message)
+	if !errors.Is(err, ErrVerifyFailed) {
+		t.Fatalf("Verify(corrupted s) error = %v, want %v", err, ErrVerifyFailed)
 	}
 
 	var zero PrivateKey
