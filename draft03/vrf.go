@@ -43,7 +43,8 @@ type PublicKey [PublicKeySize]byte
 //
 // The zero value is not a usable key: its public half decodes to the identity
 // point, so Prove reports ErrSmallOrderPoint. Obtain one from GenerateKey or
-// NewKeyFromSeed.//
+// NewKeyFromSeed.
+//
 // Its methods take a pointer receiver so that calling one does not copy the
 // key material. A PrivateKey must therefore be addressable to call them: assign
 // it to a variable rather than calling a method on a function result directly.
