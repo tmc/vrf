@@ -87,7 +87,7 @@ func ExamplePublicKey_Verify() {
 		log.Fatal(err)
 	}
 	privateKey := draft03.NewKeyFromSeed(seed)
-	publicKey := privateKey.Public().(draft03.PublicKey)
+	publicKey := privateKey.PublicKey()
 
 	// Message
 	message := []byte("hello world")
@@ -116,7 +116,7 @@ func ExampleVerify() {
 		log.Fatal(err)
 	}
 	privateKey := draft03.NewKeyFromSeed(seed)
-	publicKey := privateKey.Public().(draft03.PublicKey)
+	publicKey := privateKey.PublicKey()
 
 	// Message
 	message := []byte("hello world")
@@ -147,7 +147,7 @@ func Example() {
 
 	// Generate VRF key pair
 	privateKey := draft03.NewKeyFromSeed(seed)
-	publicKey := privateKey.Public().(draft03.PublicKey)
+	publicKey := privateKey.PublicKey()
 
 	// Message to prove randomness for
 	message := []byte("block-12345")

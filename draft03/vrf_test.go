@@ -137,6 +137,9 @@ func TestKeyConstructorsAndMethods(t *testing.T) {
 	if !pub.Equal(wantPub) {
 		t.Fatal("PrivateKey.Public returned unexpected public key")
 	}
+	if got := priv.PublicKey(); !got.Equal(pub) {
+		t.Fatal("PublicKey and Public returned different keys")
+	}
 
 	gotSeed := priv.Seed()
 	if !bytes.Equal(gotSeed, seed) {

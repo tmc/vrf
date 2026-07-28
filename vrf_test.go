@@ -28,7 +28,10 @@ func TestRootProofMatchesRFC9381(t *testing.T) {
 
 	// Prove and verify through the root package.
 	priv := vrf.NewKeyFromSeed(seed)
-	pub := priv.Public().(vrf.PublicKey)
+	pub := priv.PublicKey()
+	if !pub.Equal(priv.Public().(vrf.PublicKey)) {
+		t.Fatal("PublicKey and Public returned different keys")
+	}
 	proof, err := priv.Prove(message)
 	if err != nil {
 		t.Fatal(err)

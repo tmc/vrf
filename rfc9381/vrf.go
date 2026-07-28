@@ -145,8 +145,16 @@ func keygen(seed [SeedSize]byte) (PublicKey, PrivateKey) {
 	return pk, sk
 }
 
-// Public returns the public key corresponding to sk.
+// Public returns the public key corresponding to sk, as a [crypto.PublicKey].
+//
+// Use [PrivateKey.PublicKey] to obtain the concrete type without a type
+// assertion.
 func (sk *PrivateKey) Public() crypto.PublicKey {
+	return sk.PublicKey()
+}
+
+// PublicKey returns the public key corresponding to sk.
+func (sk *PrivateKey) PublicKey() PublicKey {
 	var pk PublicKey
 	copy(pk[:], sk[SeedSize:])
 	return pk

@@ -13,7 +13,7 @@ import (
 func Example() {
 	seed := bytes.Repeat([]byte{1}, rfc9381.SeedSize)
 	priv := rfc9381.NewKeyFromSeed(seed)
-	pub := priv.Public().(rfc9381.PublicKey)
+	pub := priv.PublicKey()
 
 	proof, err := priv.Prove([]byte("message"))
 	if err != nil {
@@ -67,7 +67,7 @@ func ExamplePublicKey_Verify() {
 		log.Fatal(err)
 	}
 	privateKey := rfc9381.NewKeyFromSeed(seed)
-	publicKey := privateKey.Public().(rfc9381.PublicKey)
+	publicKey := privateKey.PublicKey()
 
 	message := []byte("hello world")
 	proof, err := privateKey.Prove(message)
@@ -93,7 +93,7 @@ func ExampleVerify() {
 		log.Fatal(err)
 	}
 	privateKey := rfc9381.NewKeyFromSeed(seed)
-	publicKey := privateKey.Public().(rfc9381.PublicKey)
+	publicKey := privateKey.PublicKey()
 
 	proof, err := privateKey.Prove([]byte("hello world"))
 	if err != nil {

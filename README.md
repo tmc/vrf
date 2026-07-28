@@ -29,7 +29,7 @@ pk, sk, err := vrf.GenerateKey(rand.Reader)
 
 // Or derive a private key from a 32-byte seed.
 sk = vrf.NewKeyFromSeed(seed)
-pk = sk.Public().(vrf.PublicKey)
+pk = sk.PublicKey()
 
 // Create a proof.
 proof, err := sk.Prove(message)

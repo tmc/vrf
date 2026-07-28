@@ -69,6 +69,9 @@ func TestConstructorsAndSentinels(t *testing.T) {
 	}
 	wantPriv := NewKeyFromSeed(seed)
 	wantPub := wantPriv.Public().(PublicKey)
+	if got := wantPriv.PublicKey(); !got.Equal(wantPub) {
+		t.Fatal("PublicKey and Public returned different keys")
+	}
 	if !pub.Equal(wantPub) || !priv.Equal(wantPriv) {
 		t.Fatal("GenerateKey returned unexpected key")
 	}

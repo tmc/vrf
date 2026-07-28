@@ -19,7 +19,7 @@
 //		log.Fatal(err)
 //	}
 //	priv := vrf.NewKeyFromSeed(seed)
-//	pub := priv.Public().(vrf.PublicKey)
+//	pub := priv.PublicKey()
 //	proof, err := priv.Prove(message)
 //	if err != nil {
 //		log.Fatal(err)
