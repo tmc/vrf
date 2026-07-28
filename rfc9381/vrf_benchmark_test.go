@@ -116,7 +116,7 @@ func BenchmarkRFC9381ProofToHash(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		benchmarkBytes = output
+		benchmarkBytes = output[:]
 	}
 }
 

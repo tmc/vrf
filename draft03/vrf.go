@@ -190,6 +190,22 @@ func (pk PublicKey) Equal(x crypto.PublicKey) bool {
 	return ok && subtle.ConstantTimeCompare(pk[:], other[:]) == 1
 }
 
+// Hash returns the VRF output encoded in p without verifying it.
+//
+// This is ECVRF_proof_to_hash from draft-irtf-cfrg-vrf-03, Section 5.2, and
+// matches the semantics of Algorand's VrfProof.Hash. It decodes the proof and
+// hashes its gamma point, and reports an error only when the proof is
+// malformed.
+//
+// Hash does not authenticate anything. It takes no public key and no message,
+// so it cannot tell a genuine proof from one an attacker made up: any proof
+// that decodes yields some output. Use Verify, which returns the same output
+// only when the proof holds. Reach for Hash only when the proof has already
+// been verified, or when the output is not being trusted.
+func (p Proof) Hash() (Output, error) {
+	return proofToHash(p[:])
+}
+
 // Verify is the package-level form of (PublicKey).Verify, with arguments in
 // ed25519.Verify order: pub, msg, proof.
 //

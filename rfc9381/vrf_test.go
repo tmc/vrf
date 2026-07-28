@@ -193,7 +193,7 @@ func TestProofToHashValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(got, want) {
+	if !bytes.Equal(got[:], want) {
 		t.Fatalf("proofToHash = %x, want %x", got, want)
 	}
 
@@ -370,4 +370,59 @@ func decodeHex(t testing.TB, s string) []byte {
 		t.Fatal(err)
 	}
 	return b
+}
+
+// TestProofHash pins the contract of the exported Hash: it agrees with Verify
+// on a good proof, rejects a malformed one, and — the part worth guarding —
+// still returns an output for a proof that decodes but does not verify.
+func TestProofHash(t *testing.T) {
+	seed := decodeHex(t, rfcVectors[0].seed)
+	message := decodeHex(t, rfcVectors[0].message)
+	want := decodeHex(t, rfcVectors[0].output)
+
+	priv := NewKeyFromSeed(seed)
+	pub := priv.Public().(PublicKey)
+	proof, err := priv.Prove(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := proof.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got[:], want) {
+		t.Fatalf("Hash = %x, want %x", got, want)
+	}
+	verified, err := Verify(pub, message, proof)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != verified {
+		t.Fatal("Hash disagrees with Verify on a valid proof")
+	}
+
+	// A proof whose Gamma does not decode is malformed, so Hash reports it.
+	var bad Proof
+	copy(bad[:], proof[:])
+	copy(bad[:32], decodeHex(t, "efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"))
+	if _, err := bad.Hash(); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("Hash(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
+	}
+
+	// Corrupting s leaves the proof well formed, so Hash still yields the
+	// output even though the proof no longer verifies. Hash authenticates
+	// nothing; that is the whole hazard the doc comment warns about.
+	forged := proof
+	forged[ProofSize-1] ^= 1
+	forgedHash, err := forged.Hash()
+	if err != nil {
+		t.Fatalf("Hash(unverifiable but well-formed proof) = %v, want no error", err)
+	}
+	if forgedHash != got {
+		t.Fatal("Hash depends on s, but it should hash only Gamma")
+	}
+	if _, err := Verify(pub, message, forged); !errors.Is(err, ErrVerifyFailed) {
+		t.Fatalf("Verify(forged) error = %v, want %v", err, ErrVerifyFailed)
+	}
 }

@@ -545,3 +545,75 @@ func benchmarkVRFFixture(index int) ([SeedSize]byte, []byte) {
 	}
 	return seed, message
 }
+
+// TestProofHash pins the contract of the exported Hash: it agrees with Verify
+// on a good proof, rejects a malformed one, and — the part worth guarding —
+// still returns an output for a proof that decodes but does not verify. This
+// is the Algorand VrfProof.Hash semantics.
+func TestProofHash(t *testing.T) {
+	var seed [SeedSize]byte
+	for i := range seed {
+		seed[i] = byte(i)
+	}
+	message := []byte("proof to hash")
+
+	priv := NewKeyFromSeed(seed[:])
+	pub := priv.Public().(PublicKey)
+	proof, err := priv.Prove(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := proof.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	verified, err := Verify(pub, message, proof)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != verified {
+		t.Fatal("Hash disagrees with Verify on a valid proof")
+	}
+
+	// A proof whose Gamma does not decode is malformed, so Hash reports it.
+	bad := proof
+	copy(bad[:32], decodeHex(t, "efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"))
+	if _, err := bad.Hash(); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("Hash(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
+	}
+
+	// Corrupting s leaves the proof well formed, so Hash still yields the
+	// output even though the proof no longer verifies. Hash authenticates
+	// nothing; that is the whole hazard the doc comment warns about.
+	forged := proof
+	forged[ProofSize-1] ^= 1
+	forgedHash, err := forged.Hash()
+	if err != nil {
+		t.Fatalf("Hash(unverifiable but well-formed proof) = %v, want no error", err)
+	}
+	if forgedHash != got {
+		t.Fatal("Hash depends on s, but it should hash only Gamma")
+	}
+	if _, err := Verify(pub, message, forged); !errors.Is(err, ErrVerifyFailed) {
+		t.Fatalf("Verify(forged) error = %v, want %v", err, ErrVerifyFailed)
+	}
+}
+
+// TestProofHashMatchesAlgorandVectors checks Hash against the captured
+// Algorand outputs directly, without going through Verify.
+func TestProofHashMatchesAlgorandVectors(t *testing.T) {
+	for _, v := range algorandParityVectors {
+		t.Run(v.name, func(t *testing.T) {
+			var proof Proof
+			copy(proof[:], decodeHex(t, v.proof))
+			got, err := proof.Hash()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(got[:], decodeHex(t, v.output)) {
+				t.Fatalf("Hash = %x, want %x", got, decodeHex(t, v.output))
+			}
+		})
+	}
+}

@@ -192,6 +192,21 @@ func (o Output) PrefixUint64() uint64 {
 	return binary.BigEndian.Uint64(o[:8])
 }
 
+// Hash returns the VRF output encoded in p without verifying it.
+//
+// This is ECVRF_proof_to_hash from RFC 9381, Section 5.2. It decodes the proof
+// and hashes its gamma point, and reports an error only when the proof is
+// malformed.
+//
+// Hash does not authenticate anything. It takes no public key and no message,
+// so it cannot tell a genuine proof from one an attacker made up: any proof
+// that decodes yields some output. Use Verify, which returns the same output
+// only when the proof holds. Reach for Hash only when the proof has already
+// been verified, or when the output is not being trusted.
+func (p Proof) Hash() (Output, error) {
+	return proofToHash(p[:])
+}
+
 // Verify is the package-level form of (PublicKey).Verify, with arguments in
 // ed25519.Verify order: pub, msg, proof.
 //
@@ -555,14 +570,13 @@ func decodeProof(Gamma *edwards25519.Point, s *edwards25519.Scalar, pi []byte) (
 	return c, nil
 }
 
-func proofToHash(pi []byte) ([]byte, error) {
+func proofToHash(pi []byte) (Output, error) {
 	var Gamma edwards25519.Point
 	var s edwards25519.Scalar
 	if _, err := decodeProof(&Gamma, &s, pi); err != nil {
-		return nil, err
+		return Output{}, err
 	}
-	output := proofToHashPoint(&Gamma)
-	return output[:], nil
+	return proofToHashPoint(&Gamma), nil
 }
 
 func proofToHashPoint(Gamma *edwards25519.Point) Output {
