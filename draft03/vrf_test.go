@@ -368,7 +368,7 @@ func TestOutputPrefixUint64(t *testing.T) {
 
 // TestProofToHashValidates checks that the standalone proofToHash still
 // decodes and validates a proof itself, independently of vrfVerify.
-func TestProofToHashValidates(t *testing.T) {
+func TestProofToHashValidation(t *testing.T) {
 	var seed [32]byte
 	if _, err := rand.Read(seed[:]); err != nil {
 		t.Fatal(err)

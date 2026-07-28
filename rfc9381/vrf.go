@@ -395,6 +395,8 @@ func sqrtMinus486664() *field.Element {
 	minus486664 := new(field.Element).Negate(new(field.Element).Mult32(oneFE, 486664))
 	c, wasSquare := new(field.Element).SqrtRatio(minus486664, oneFE)
 	if wasSquare != 1 {
+		// Unreachable: -486664 is a quadratic residue mod 2^255-19, which is
+		// what makes the Montgomery-to-Edwards map well defined for this curve.
 		panic("vrf: sqrt(-486664) does not exist")
 	}
 	if sgn0(c) == 1 {
@@ -407,6 +409,12 @@ func sgn0(x *field.Element) int {
 	return int(x.Bytes()[0] & 1)
 }
 
+// expandMessageXMD is the generic expand_message_xmd from RFC 9380 Section 5.3.
+// Nothing in the package calls it: hashToField uses expandMessageXMD48, which
+// is specialized to the single output length this suite needs. It is kept
+// because TestExpandMessageXMD48 checks the specialized version against it
+// differentially, and a specialization is only as trustworthy as the general
+// implementation it is compared with.
 func expandMessageXMD(msg, dst []byte, lenInBytes int) []byte {
 	h := func(parts ...[]byte) []byte {
 		sum := sha512.New()

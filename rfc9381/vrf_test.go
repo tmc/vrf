@@ -265,8 +265,8 @@ func TestOutputPrefixUint64(t *testing.T) {
 // b_0 XOR b_(i-1) chain never runs. These vectors request 128 bytes,
 // which sets ell to 2 and covers it.
 //
-// expandMessageXMD is the oracle TestExpandMessageXMD48 compares against,
-// so it needs vectors of its own rather than a differential check alone.
+// expandMessageXMD is the oracle TestExpandMessageXMD48 compares against, so
+// it needs vectors of its own rather than a differential check alone.
 func TestExpandMessageXMDMultiBlock(t *testing.T) {
 	dst := []byte("QUUX-V01-CS02-with-expander-SHA512-256")
 	for _, v := range []struct {
