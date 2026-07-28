@@ -50,11 +50,11 @@ var (
 	ErrVerifyFailed = rfc9381.ErrVerifyFailed
 )
 
-// GenerateKey generates a new VRF key pair using rand.
+// GenerateKey generates a new VRF key pair using random.
 //
-// If rand is nil, crypto/rand.Reader is used.
-func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {
-	return rfc9381.GenerateKey(rand)
+// If random is nil, crypto/rand.Reader is used.
+func GenerateKey(random io.Reader) (PublicKey, PrivateKey, error) {
+	return rfc9381.GenerateKey(random)
 }
 
 // ParsePublicKey returns a PublicKey from its 32-byte encoding.
