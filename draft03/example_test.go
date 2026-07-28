@@ -3,6 +3,7 @@ package draft03_test
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 
@@ -169,7 +170,7 @@ func Example() {
 
 	// Verify with a different message fails
 	_, err = draft03.Verify(publicKey, []byte("different-message"), proof)
-	if err != nil {
+	if errors.Is(err, draft03.ErrVerifyFailed) {
 		fmt.Println("Verification with different message failed (expected)")
 	}
 

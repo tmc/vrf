@@ -21,7 +21,11 @@ func Example() {
 		return
 	}
 	output, err := rfc9381.Verify(pub, []byte("message"), proof)
-	fmt.Println(err == nil && len(output) == rfc9381.OutputSize)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(len(output) == rfc9381.OutputSize)
 
 	// Output:
 	// true
