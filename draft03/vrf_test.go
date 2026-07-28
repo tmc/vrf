@@ -33,21 +33,13 @@ func TestVRFBasicOperation(t *testing.T) {
 	}
 
 	// Verify proof
-	output1, err := pk.Verify(proof, message)
+	output1, err := Verify(pk, message, proof)
 	if err != nil {
 		t.Fatalf("Failed to verify proof: %v", err)
 	}
 
-	outputPkg, err := Verify(pk, message, proof)
-	if err != nil {
-		t.Fatalf("Failed to verify proof with package-level helper: %v", err)
-	}
-	if !bytes.Equal(output1[:], outputPkg[:]) {
-		t.Fatal("Method and package-level verification returned different outputs")
-	}
-
 	// Verify again to ensure deterministic output
-	output2, err := pk.Verify(proof, message)
+	output2, err := Verify(pk, message, proof)
 	if err != nil {
 		t.Fatalf("Failed to verify proof second time: %v", err)
 	}
@@ -59,13 +51,9 @@ func TestVRFBasicOperation(t *testing.T) {
 
 	// Wrong message should fail verification
 	wrongMessage := []byte("wrong message")
-	_, err = pk.Verify(proof, wrongMessage)
-	if err == nil {
-		t.Error("Expected verification to fail for wrong message")
-	}
 	_, err = Verify(pk, wrongMessage, proof)
 	if err == nil {
-		t.Error("Expected package-level verification to fail for wrong message")
+		t.Error("Expected verification to fail for wrong message")
 	}
 }
 
@@ -103,11 +91,11 @@ func TestVRFDeterministic(t *testing.T) {
 	}
 
 	// Outputs should be identical
-	output1, err := pk1.Verify(proof1, message)
+	output1, err := Verify(pk1, message, proof1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	output2, err := pk2.Verify(proof2, message)
+	output2, err := Verify(pk2, message, proof2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +204,7 @@ func TestVRFInvalidInputs(t *testing.T) {
 	}
 	copy(badGamma[:32], gamma)
 
-	_, err = pk.Verify(badGamma, message)
+	_, err = Verify(pk, message, badGamma)
 	if !errors.Is(err, ErrInvalidProof) {
 		t.Fatalf("Verify(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
 	}
@@ -225,7 +213,7 @@ func TestVRFInvalidInputs(t *testing.T) {
 	badS := validProof
 	badS[ProofSize-1] ^= 1
 
-	_, err = pk.Verify(badS, message)
+	_, err = Verify(pk, message, badS)
 	if !errors.Is(err, ErrVerifyFailed) {
 		t.Fatalf("Verify(corrupted s) error = %v, want %v", err, ErrVerifyFailed)
 	}
@@ -292,7 +280,7 @@ func TestParseAndErrorSentinels(t *testing.T) {
 	if !bytes.Equal(parsedProof[:], proof[:]) {
 		t.Fatal("ParseProof did not round-trip")
 	}
-	if _, err := parsedPK.Verify(parsedProof, message); err != nil {
+	if _, err := Verify(parsedPK, message, parsedProof); err != nil {
 		t.Fatal(err)
 	}
 
@@ -320,7 +308,7 @@ func TestParseAndErrorSentinels(t *testing.T) {
 		{
 			name: "wrong message",
 			fn: func() error {
-				_, err := pk.Verify(proof, []byte("wrong message"))
+				_, err := Verify(pk, []byte("wrong message"), proof)
 				return err
 			},
 			want: ErrVerifyFailed,
@@ -330,7 +318,7 @@ func TestParseAndErrorSentinels(t *testing.T) {
 			fn: func() error {
 				var small PublicKey
 				copy(small[:], edwards25519.NewIdentityPoint().Bytes())
-				_, err := small.Verify(proof, message)
+				_, err := Verify(small, message, proof)
 				return err
 			},
 			want: ErrSmallOrderPoint,
@@ -344,7 +332,7 @@ func TestParseAndErrorSentinels(t *testing.T) {
 					return err
 				}
 				copy(invalid[:], b)
-				_, err = invalid.Verify(proof, message)
+				_, err = Verify(invalid, message, proof)
 				return err
 			},
 			want: ErrInvalidPublicKey,
@@ -445,7 +433,7 @@ func TestVerifyReusesValidatedGamma(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := pk.Verify(proof, message)
+		got, err := Verify(pk, message, proof)
 		if err != nil {
 			t.Fatalf("Verify(%d-byte message) = %v", size, err)
 		}
@@ -478,7 +466,7 @@ func TestVerifyRejectsBeforeHashing(t *testing.T) {
 	tampered := proof
 	tampered[ProofSize-1] ^= 1
 
-	out, err := pk.Verify(tampered, message)
+	out, err := Verify(pk, message, tampered)
 	if !errors.Is(err, ErrVerifyFailed) {
 		t.Fatalf("Verify(tampered) error = %v, want %v", err, ErrVerifyFailed)
 	}
@@ -487,7 +475,7 @@ func TestVerifyRejectsBeforeHashing(t *testing.T) {
 	}
 
 	// Verifying against the wrong message must also fail without an output.
-	out, err = pk.Verify(proof, []byte("different message"))
+	out, err = Verify(pk, []byte("different message"), proof)
 	if !errors.Is(err, ErrVerifyFailed) {
 		t.Fatalf("Verify(wrong message) error = %v, want %v", err, ErrVerifyFailed)
 	}
@@ -523,7 +511,7 @@ func BenchmarkVRFVerify(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		output, err := pk.Verify(proof, message)
+		output, err := Verify(pk, message, proof)
 		if err != nil {
 			b.Fatal(err)
 		}

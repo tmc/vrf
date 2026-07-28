@@ -36,7 +36,7 @@ const (
 // PublicKey represents a VRF public key.
 //
 // The zero value is not a usable key. Obtain one from GenerateKey,
-// ParsePublicKey, or (PrivateKey).Public.
+// ParsePublicKey, or (PrivateKey).PublicKey.
 type PublicKey [PublicKeySize]byte
 
 // PrivateKey represents a VRF private key (32-byte seed + 32-byte public key).
@@ -215,13 +215,14 @@ func (p Proof) Hash() (Output, error) {
 	return proofToHash(p[:])
 }
 
-// Verify is the package-level form of (PublicKey).Verify, with arguments in
-// ed25519.Verify order: pub, msg, proof.
+// Verify verifies proof over msg under pub and returns the VRF output if the
+// proof is valid.
 //
-// The method form keeps proof before message because the receiver supplies the
-// public key.
+// Arguments are in crypto/ed25519.Verify order: public key, message, proof.
+// Algorand's cgo API spells the same operation VrfPubkey.Verify(proof,
+// message); see the package documentation.
 func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
-	return pub.Verify(proof, msg)
+	return vrfVerifyAndHash(pub[:], proof[:], msg)
 }
 
 // Prove generates a VRF proof for message.
@@ -236,14 +237,6 @@ func (sk *PrivateKey) Prove(message []byte) (Proof, error) {
 	var xScalar edwards25519.Scalar
 	truncHashedSk := sk.expand(&xScalar)
 	return vrfProve(sk[32:], &xScalar, truncHashedSk, message)
-}
-
-// Verify verifies proof over message and returns the VRF output if valid.
-//
-// The method argument order is proof, message. The package-level Verify uses
-// pub, message, proof to match crypto/ed25519.Verify.
-func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
-	return vrfVerifyAndHash(pk[:], proof[:], message)
 }
 
 // expand converts a private key into the private scalar x and truncated hash

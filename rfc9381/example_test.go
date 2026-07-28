@@ -61,30 +61,6 @@ func ExamplePrivateKey_Prove() {
 	// Proof size: 80 bytes
 }
 
-func ExamplePublicKey_Verify() {
-	seed := make([]byte, rfc9381.SeedSize)
-	if _, err := rand.Read(seed); err != nil {
-		log.Fatal(err)
-	}
-	privateKey := rfc9381.NewKeyFromSeed(seed)
-	publicKey := privateKey.PublicKey()
-
-	message := []byte("hello world")
-	proof, err := privateKey.Prove(message)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	output, err := publicKey.Verify(proof, message)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("VRF output size: %d bytes\n", len(output))
-	// Output:
-	// VRF output size: 64 bytes
-}
-
 // ExampleVerify shows that a proof is bound to the message it was created
 // for, and that the failure is reported as ErrVerifyFailed.
 func ExampleVerify() {

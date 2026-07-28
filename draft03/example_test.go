@@ -80,35 +80,6 @@ func ExamplePrivateKey_Prove() {
 	// Proof size: 80 bytes
 }
 
-func ExamplePublicKey_Verify() {
-	// Generate keys
-	seed := make([]byte, draft03.SeedSize)
-	if _, err := rand.Read(seed); err != nil {
-		log.Fatal(err)
-	}
-	privateKey := draft03.NewKeyFromSeed(seed)
-	publicKey := privateKey.PublicKey()
-
-	// Message
-	message := []byte("hello world")
-
-	// Generate proof
-	proof, err := privateKey.Prove(message)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Verify proof and get VRF output
-	output, err := publicKey.Verify(proof, message)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("VRF output size: %d bytes\n", len(output))
-	// Output:
-	// VRF output size: 64 bytes
-}
-
 func ExampleVerify() {
 	// Generate keys
 	seed := make([]byte, draft03.SeedSize)
@@ -127,7 +98,7 @@ func ExampleVerify() {
 		log.Fatal(err)
 	}
 
-	// Verify proof with the package-level helper.
+	// Verify proof and get VRF output
 	output, err := draft03.Verify(publicKey, message, proof)
 	if err != nil {
 		log.Fatal(err)

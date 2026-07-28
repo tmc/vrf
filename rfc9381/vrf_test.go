@@ -50,7 +50,7 @@ func TestRFC9381Vectors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			output, err = parsedPub.Verify(parsedProof, msg)
+			output, err = Verify(parsedPub, msg, parsedProof)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -229,7 +229,7 @@ func TestVerifyRejectsUndecodableGamma(t *testing.T) {
 	badGamma := proof
 	copy(badGamma[:32], decodeHex(t, "efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"))
 
-	if _, err := pub.Verify(badGamma, message); !errors.Is(err, ErrInvalidProof) {
+	if _, err := Verify(pub, message, badGamma); !errors.Is(err, ErrInvalidProof) {
 		t.Fatalf("Verify(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
 	}
 }
