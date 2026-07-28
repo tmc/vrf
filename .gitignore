@@ -1,2 +1,7 @@
 *.test
 *.out
+.SNAPSHOT-TAKEN-AT
+.claude/
+CLAUDE.md
+design.md
+plans/
