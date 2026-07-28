@@ -43,7 +43,10 @@ type PublicKey [PublicKeySize]byte
 //
 // The zero value is not a usable key: its public half decodes to the identity
 // point, so Prove reports ErrSmallOrderPoint. Obtain one from GenerateKey or
-// NewKeyFromSeed.
+// NewKeyFromSeed.//
+// Its methods take a pointer receiver so that calling one does not copy the
+// key material. A PrivateKey must therefore be addressable to call them: assign
+// it to a variable rather than calling a method on a function result directly.
 type PrivateKey [PrivateKeySize]byte
 
 // Proof represents a VRF proof.
@@ -151,23 +154,34 @@ func keygen(seed [SeedSize]byte) (PublicKey, PrivateKey) {
 }
 
 // Public returns the public key corresponding to sk.
-func (sk PrivateKey) Public() crypto.PublicKey {
+func (sk *PrivateKey) Public() crypto.PublicKey {
 	var pk PublicKey
 	copy(pk[:], sk[SeedSize:])
 	return pk
 }
 
 // Seed returns a copy of sk's private key seed.
-func (sk PrivateKey) Seed() []byte {
+func (sk *PrivateKey) Seed() []byte {
 	seed := make([]byte, SeedSize)
 	copy(seed, sk[:SeedSize])
 	return seed
 }
 
 // Equal reports whether sk and x contain the same private key.
-func (sk PrivateKey) Equal(x crypto.PrivateKey) bool {
-	other, ok := x.(PrivateKey)
-	return ok && subtle.ConstantTimeCompare(sk[:], other[:]) == 1
+//
+// x may be a PrivateKey or a *PrivateKey.
+func (sk *PrivateKey) Equal(x crypto.PrivateKey) bool {
+	var other *PrivateKey
+	switch v := x.(type) {
+	case PrivateKey:
+		other = &v
+	case *PrivateKey:
+		other = v
+	}
+	if other == nil {
+		return false
+	}
+	return subtle.ConstantTimeCompare(sk[:], other[:]) == 1
 }
 
 // Equal reports whether pk and x contain the same public key.
@@ -186,7 +200,7 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 }
 
 // Prove generates a VRF proof for message.
-func (sk PrivateKey) Prove(message []byte) (Proof, error) {
+func (sk *PrivateKey) Prove(message []byte) (Proof, error) {
 	Y := &edwards25519.Point{}
 	if _, err := Y.SetBytes(sk[SeedSize:]); err != nil {
 		return Proof{}, fmt.Errorf("%w: private key public half: %v", ErrInvalidPublicKey, err)
@@ -209,7 +223,7 @@ func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
 
 // expand converts a private key into the private scalar x and truncated hash
 // for nonce generation.
-func (sk PrivateKey) expand(xScalar *edwards25519.Scalar) [32]byte {
+func (sk *PrivateKey) expand(xScalar *edwards25519.Scalar) [32]byte {
 	hSum := sha512.Sum512(sk[:32])
 
 	xScalar.SetBytesWithClamping(hSum[:32])

@@ -153,6 +153,17 @@ func TestKeyConstructorsAndMethods(t *testing.T) {
 	if !wantPriv.Equal(crypto.PrivateKey(priv)) {
 		t.Fatal("PrivateKey.Equal rejected equal key")
 	}
+
+	// Equal takes either form, since the methods have pointer receivers.
+	if !wantPriv.Equal(&priv) {
+		t.Fatal("PrivateKey.Equal rejected an equal *PrivateKey")
+	}
+	if wantPriv.Equal((*PrivateKey)(nil)) {
+		t.Fatal("PrivateKey.Equal accepted a nil *PrivateKey")
+	}
+	if wantPriv.Equal(pub) {
+		t.Fatal("PrivateKey.Equal accepted a value of another type")
+	}
 }
 
 func TestGenerateKey(t *testing.T) {

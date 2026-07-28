@@ -59,6 +59,10 @@ type PublicKey [PublicKeySize]byte
 // The zero value is not a usable key: its public half decodes to the identity
 // point, so Prove reports ErrSmallOrderPoint. Obtain one from GenerateKey or
 // NewKeyFromSeed.
+//
+// Its methods take a pointer receiver so that calling one does not copy the
+// key material. A PrivateKey must therefore be addressable to call them: assign
+// it to a variable rather than calling a method on a function result directly.
 type PrivateKey [PrivateKeySize]byte
 
 // Proof represents an RFC 9381 VRF proof.
@@ -142,23 +146,34 @@ func keygen(seed [SeedSize]byte) (PublicKey, PrivateKey) {
 }
 
 // Public returns the public key corresponding to sk.
-func (sk PrivateKey) Public() crypto.PublicKey {
+func (sk *PrivateKey) Public() crypto.PublicKey {
 	var pk PublicKey
 	copy(pk[:], sk[SeedSize:])
 	return pk
 }
 
 // Seed returns a copy of sk's private key seed.
-func (sk PrivateKey) Seed() []byte {
+func (sk *PrivateKey) Seed() []byte {
 	seed := make([]byte, SeedSize)
 	copy(seed, sk[:SeedSize])
 	return seed
 }
 
 // Equal reports whether sk and x contain the same private key.
-func (sk PrivateKey) Equal(x crypto.PrivateKey) bool {
-	other, ok := x.(PrivateKey)
-	return ok && subtle.ConstantTimeCompare(sk[:], other[:]) == 1
+//
+// x may be a PrivateKey or a *PrivateKey.
+func (sk *PrivateKey) Equal(x crypto.PrivateKey) bool {
+	var other *PrivateKey
+	switch v := x.(type) {
+	case PrivateKey:
+		other = &v
+	case *PrivateKey:
+		other = v
+	}
+	if other == nil {
+		return false
+	}
+	return subtle.ConstantTimeCompare(sk[:], other[:]) == 1
 }
 
 // Equal reports whether pk and x contain the same public key.
@@ -187,7 +202,7 @@ func Verify(pub PublicKey, msg []byte, proof Proof) (Output, error) {
 }
 
 // Prove generates a VRF proof for message.
-func (sk PrivateKey) Prove(message []byte) (Proof, error) {
+func (sk *PrivateKey) Prove(message []byte) (Proof, error) {
 	var Y edwards25519.Point
 	var x edwards25519.Scalar
 	var truncatedHash [32]byte
@@ -205,7 +220,7 @@ func (pk PublicKey) Verify(proof Proof, message []byte) (Output, error) {
 	return vrfVerifyAndHash(pk[:], proof[:], message)
 }
 
-func (sk PrivateKey) expand(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash *[32]byte) error {
+func (sk *PrivateKey) expand(Y *edwards25519.Point, x *edwards25519.Scalar, truncatedHash *[32]byte) error {
 	h := sha512.Sum512(sk[:SeedSize])
 	x.SetBytesWithClamping(h[:32])
 

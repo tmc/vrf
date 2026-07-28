@@ -79,6 +79,17 @@ func TestConstructorsAndSentinels(t *testing.T) {
 		t.Fatal("Seed returned unexpected value")
 	}
 
+	// Equal takes either form, since the methods have pointer receivers.
+	if !priv.Equal(&wantPriv) {
+		t.Fatal("Equal rejected an equal *PrivateKey")
+	}
+	if priv.Equal((*PrivateKey)(nil)) {
+		t.Fatal("Equal accepted a nil *PrivateKey")
+	}
+	if priv.Equal(wantPub) {
+		t.Fatal("Equal accepted a value of another type")
+	}
+
 	_, _, err = GenerateKey(bytes.NewReader(seed[:SeedSize-1]))
 	if !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Fatalf("GenerateKey error = %v, want %v", err, io.ErrUnexpectedEOF)
