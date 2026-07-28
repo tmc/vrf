@@ -192,6 +192,34 @@ func TestProofToHashValidation(t *testing.T) {
 	}
 }
 
+// TestVerifyRejectsUndecodableGamma reaches the Gamma rejection in decodeProof
+// through the public Verify. The encoding below is y = 2, which is not on the
+// curve: (y²-1)/(dy²+1) is a nonsquare, so no x exists and decoding fails for
+// every key, which keeps the case independent of the key material.
+//
+// The value is written as the non-canonical y = p+2 to match the draft03 test.
+// That non-canonicality is not what makes it fail: edwards25519 reduces y
+// before use, so p+1 and p+3 decode fine and the canonical y = 2 fails
+// identically.
+func TestVerifyRejectsUndecodableGamma(t *testing.T) {
+	seed := decodeHex(t, rfcVectors[0].seed)
+	message := decodeHex(t, rfcVectors[0].message)
+
+	priv := NewKeyFromSeed(seed)
+	pub := priv.Public().(PublicKey)
+	proof, err := priv.Prove(message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	badGamma := proof
+	copy(badGamma[:32], decodeHex(t, "efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"))
+
+	if _, err := pub.Verify(badGamma, message); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("Verify(undecodable Gamma) error = %v, want %v", err, ErrInvalidProof)
+	}
+}
+
 func TestExpandMessageXMDSHA512(t *testing.T) {
 	dst := []byte("QUUX-V01-CS02-with-expander-SHA512-256")
 	want := decodeHex(t, "0da749f12fbe5483eb066a5f595055679b976e93abe9be6f0f6318bce7aca8dc")
