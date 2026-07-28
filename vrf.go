@@ -38,7 +38,8 @@ var (
 	// ErrInvalidPublicKey reports a malformed public key.
 	ErrInvalidPublicKey = rfc9381.ErrInvalidPublicKey
 
-	// ErrSmallOrderPoint reports a public key with small order.
+	// ErrSmallOrderPoint reports a public key with small order. It wraps
+	// ErrInvalidPublicKey, since such a key is a species of invalid key.
 	ErrSmallOrderPoint = rfc9381.ErrSmallOrderPoint
 
 	// ErrInvalidProof reports a malformed or invalid VRF proof.
@@ -56,6 +57,9 @@ func GenerateKey(rand io.Reader) (PublicKey, PrivateKey, error) {
 }
 
 // ParsePublicKey returns a PublicKey from its 32-byte encoding.
+//
+// It rejects encodings that do not decode to a curve point, and points of small
+// order.
 func ParsePublicKey(b []byte) (PublicKey, error) {
 	return rfc9381.ParsePublicKey(b)
 }

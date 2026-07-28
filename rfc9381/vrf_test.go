@@ -100,10 +100,15 @@ func TestConstructorsAndSentinels(t *testing.T) {
 	if _, err := ParsePublicKey(pub[:PublicKeySize-1]); !errors.Is(err, ErrInvalidPublicKey) {
 		t.Fatalf("ParsePublicKey error = %v, want %v", err, ErrInvalidPublicKey)
 	}
-	invalidPub, err := ParsePublicKey(decodeHex(t, "0200000000000000000000000000000000000000000000000000000000000000"))
-	if err != nil {
-		t.Fatal(err)
+	// y = 2 is not on the curve. ParsePublicKey rejects it outright.
+	offCurve := decodeHex(t, "0200000000000000000000000000000000000000000000000000000000000000")
+	if _, err := ParsePublicKey(offCurve); !errors.Is(err, ErrInvalidPublicKey) {
+		t.Fatalf("ParsePublicKey(off-curve) error = %v, want %v", err, ErrInvalidPublicKey)
 	}
+	// Verify checks for itself too, since a PublicKey can be built by
+	// conversion without passing through ParsePublicKey.
+	var invalidPub PublicKey
+	copy(invalidPub[:], offCurve)
 	if _, err := Verify(invalidPub, []byte("message"), Proof{}); !errors.Is(err, ErrInvalidPublicKey) {
 		t.Fatalf("invalid public key error = %v, want %v", err, ErrInvalidPublicKey)
 	}
@@ -130,6 +135,14 @@ func TestConstructorsAndSentinels(t *testing.T) {
 	copy(small[:], []byte{1})
 	if _, err := Verify(small, []byte("message"), proof); !errors.Is(err, ErrSmallOrderPoint) {
 		t.Fatalf("small-order error = %v, want %v", err, ErrSmallOrderPoint)
+	}
+	if _, err := ParsePublicKey(small[:]); !errors.Is(err, ErrSmallOrderPoint) {
+		t.Fatalf("ParsePublicKey(small-order) error = %v, want %v", err, ErrSmallOrderPoint)
+	}
+	// A small-order key is a species of invalid key, so the obvious check
+	// catches it too.
+	if !errors.Is(ErrSmallOrderPoint, ErrInvalidPublicKey) {
+		t.Fatal("ErrSmallOrderPoint does not wrap ErrInvalidPublicKey")
 	}
 
 	var zero PrivateKey

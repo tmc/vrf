@@ -338,6 +338,31 @@ func TestParseAndErrorSentinels(t *testing.T) {
 			want: ErrInvalidPublicKey,
 		},
 		{
+			name: "small order public key at parse",
+			fn: func() error {
+				_, err := ParsePublicKey(edwards25519.NewIdentityPoint().Bytes())
+				return err
+			},
+			want: ErrSmallOrderPoint,
+		},
+		{
+			name: "invalid public key point at parse",
+			fn: func() error {
+				b, err := hex.DecodeString("efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f")
+				if err != nil {
+					return err
+				}
+				_, err = ParsePublicKey(b)
+				return err
+			},
+			want: ErrInvalidPublicKey,
+		},
+		{
+			name: "small order key is an invalid key",
+			fn:   func() error { return ErrSmallOrderPoint },
+			want: ErrInvalidPublicKey,
+		},
+		{
 			name: "truncated proof",
 			fn: func() error {
 				var Gamma edwards25519.Point

@@ -38,8 +38,9 @@ var (
 	// ErrInvalidPublicKey reports a malformed public key.
 	ErrInvalidPublicKey = errors.New("vrf: invalid public key")
 
-	// ErrSmallOrderPoint reports a public key with small order.
-	ErrSmallOrderPoint = errors.New("vrf: public key is a small-order point")
+	// ErrSmallOrderPoint reports a public key with small order. It wraps
+	// ErrInvalidPublicKey, since such a key is a species of invalid key.
+	ErrSmallOrderPoint = fmt.Errorf("%w: small-order point", ErrInvalidPublicKey)
 
 	// ErrInvalidProof reports a malformed VRF proof.
 	ErrInvalidProof = errors.New("vrf: invalid proof")
@@ -96,12 +97,21 @@ func GenerateKey(random io.Reader) (PublicKey, PrivateKey, error) {
 
 // ParsePublicKey returns a PublicKey from its 32-byte encoding.
 //
-// It validates the length only. Point decoding and small-order checks happen
-// during verification.
+// It rejects encodings that do not decode to a curve point, and points of small
+// order. Because PublicKey is an array type, a key obtained by conversion
+// rather than through ParsePublicKey is unchecked; Verify and Prove validate
+// again for that reason.
 func ParsePublicKey(b []byte) (PublicKey, error) {
 	var pk PublicKey
 	if len(b) != PublicKeySize {
 		return pk, fmt.Errorf("%w: must be %d bytes, got %d", ErrInvalidPublicKey, PublicKeySize, len(b))
+	}
+	var Y edwards25519.Point
+	if _, err := Y.SetBytes(b); err != nil {
+		return pk, fmt.Errorf("%w: %v", ErrInvalidPublicKey, err)
+	}
+	if isSmallOrder(&Y) {
+		return pk, ErrSmallOrderPoint
 	}
 	copy(pk[:], b)
 	return pk, nil
