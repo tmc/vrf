@@ -27,8 +27,12 @@ func TestAPISizesMatch(t *testing.T) {
 			}
 		})
 	}
-	if draft03.SuiteString == rfc9381.SuiteString {
-		t.Fatalf("suite strings are both %q", draft03.SuiteString)
+	// The suite octet is deliberately the same in both packages: it names the
+	// curve and hash, not the construction. Nothing in the encodings tells the
+	// two suites apart, which is why they are separate packages with distinct
+	// types rather than one package with a runtime switch.
+	if draft03.SuiteID != rfc9381.SuiteID {
+		t.Fatalf("suite octets differ: draft-03 %#x, RFC 9381 %#x", draft03.SuiteID, rfc9381.SuiteID)
 	}
 }
 

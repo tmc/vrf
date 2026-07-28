@@ -26,11 +26,14 @@ const (
 	// OutputSize is the size of VRF output in bytes.
 	OutputSize = 64
 
-	// vrfSuite identifies ECVRF-EDWARDS25519-SHA512-ELL2 ciphersuite
-	vrfSuite = 0x04
-
-	// SuiteString identifies the draft-03 suite implemented by this package.
-	SuiteString = "ECVRF-ED25519-SHA512-Elligator2 (draft-03)"
+	// SuiteID is the suite_string octet, which domain-separates this suite's
+	// hash inputs.
+	//
+	// It is 0x04 here and in rfc9381: the octet names the curve and hash, not
+	// the construction, so it cannot tell the two suites apart. Use it to read
+	// or write a suite octet on the wire. Keeping the suites from being mixed
+	// is the job of their distinct proof and key types.
+	SuiteID byte = 0x04
 )
 
 // PublicKey represents a VRF public key.
@@ -338,7 +341,7 @@ func vrfProve(YBytes []byte, xScalar *edwards25519.Scalar, truncHashedSk [32]byt
 // hashToCurve hashes a message to a curve point using Elligator2
 func hashToCurve(out *edwards25519.Point, YBytes []byte, message []byte) ([32]byte, error) {
 	h := sha512.New()
-	h.Write([]byte{vrfSuite})
+	h.Write([]byte{SuiteID})
 	h.Write([]byte{1})
 	h.Write(YBytes)
 	h.Write(message)
@@ -432,7 +435,7 @@ func nonceGeneration(k *edwards25519.Scalar, truncHashedSk [32]byte, HBytes [32]
 func hashPoints(scalar *edwards25519.Scalar, P1Bytes, P2Bytes, P3Bytes, P4Bytes [32]byte) {
 	var input [2 + 32*4]byte
 
-	input[0] = vrfSuite
+	input[0] = SuiteID
 	input[1] = 0x02
 	copy(input[2:], P1Bytes[:])
 	copy(input[34:], P2Bytes[:])
@@ -580,7 +583,7 @@ func proofToHash(pi []byte) (Output, error) {
 // output. It modifies Gamma in place.
 func proofToHashPoint(Gamma *edwards25519.Point) Output {
 	var hashInput [34]byte
-	hashInput[0] = vrfSuite
+	hashInput[0] = SuiteID
 	hashInput[1] = 0x03
 
 	// Apply cofactor to Gamma

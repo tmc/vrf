@@ -18,8 +18,9 @@ const (
 	// OutputSize is the size of a VRF output in bytes.
 	OutputSize = rfc9381.OutputSize
 
-	// SuiteString identifies the RFC 9381 suite.
-	SuiteString = rfc9381.SuiteString
+	// SuiteID is the suite_string octet for the RFC 9381 suite. It is 0x04 in
+	// draft03 too, so it does not distinguish the two suites.
+	SuiteID = rfc9381.SuiteID
 )
 
 // PublicKey represents an RFC 9381 VRF public key.

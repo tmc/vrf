@@ -2,7 +2,6 @@ package vrf_test
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/tmc/vrf"
@@ -14,12 +13,12 @@ import (
 // re-exported API.
 
 func TestRootIsRFC9381(t *testing.T) {
-	if vrf.SuiteString != rfc9381.SuiteString {
-		t.Fatalf("SuiteString = %q, want rfc9381 %q", vrf.SuiteString, rfc9381.SuiteString)
+	if vrf.SuiteID != rfc9381.SuiteID {
+		t.Fatalf("SuiteID = %#x, want rfc9381 %#x", vrf.SuiteID, rfc9381.SuiteID)
 	}
-	if !strings.Contains(vrf.SuiteString, "RFC 9381") {
-		t.Fatalf("SuiteString = %q, want it to name RFC 9381", vrf.SuiteString)
-	}
+	// SuiteID cannot show which suite this is: draft03 uses 0x04 too. That the
+	// root is RFC 9381 and not draft-03 is what TestRootProofMatchesRFC9381
+	// establishes, by comparing proof bytes.
 }
 
 func TestRootProofMatchesRFC9381(t *testing.T) {

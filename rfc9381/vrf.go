@@ -26,12 +26,16 @@ const (
 	// OutputSize is the size of a VRF output in bytes.
 	OutputSize = 64
 
-	vrfSuite = 0x04
+	// SuiteID is the suite_string octet, which domain-separates this suite's
+	// hash inputs.
+	//
+	// It is 0x04 here and in draft03: the octet names the curve and hash, not
+	// the construction, so it cannot tell the two suites apart. Use it to read
+	// or write a suite octet on the wire. Keeping the suites from being mixed
+	// is the job of their distinct proof and key types.
+	SuiteID byte = 0x04
 
 	hashToCurveDSTString = "ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04"
-
-	// SuiteString identifies the RFC 9381 suite implemented by this package.
-	SuiteString = "ECVRF-EDWARDS25519-SHA512-ELL2 (RFC 9381)"
 )
 
 var (
@@ -537,7 +541,7 @@ func nonceGeneration(out *edwards25519.Scalar, truncatedHash [32]byte, H *edward
 
 func challenge(out *edwards25519.Scalar, P1, P2, P3, P4, P5 *edwards25519.Point) {
 	var input [2 + 32*5 + 1]byte
-	input[0] = vrfSuite
+	input[0] = SuiteID
 	input[1] = 0x02
 	copy(input[2:], P1.Bytes())
 	copy(input[34:], P2.Bytes())
@@ -590,7 +594,7 @@ func proofToHash(pi []byte) (Output, error) {
 
 func proofToHashPoint(Gamma *edwards25519.Point) Output {
 	var input [35]byte
-	input[0] = vrfSuite
+	input[0] = SuiteID
 	input[1] = 0x03
 	Gamma.MultByCofactor(Gamma)
 	copy(input[2:], Gamma.Bytes())
