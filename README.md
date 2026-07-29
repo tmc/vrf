@@ -1,45 +1,29 @@
-# VRF
+# vrf
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/tmc/vrf.svg)](https://pkg.go.dev/github.com/tmc/vrf)
 
 Package vrf implements the ECVRF-EDWARDS25519-SHA512-ELL2 verifiable random
-function (suite 0x04) from RFC 9381, the final published standard.
+function from RFC 9381.
 
-The root package is the default entry point and re-exports
-`github.com/tmc/vrf/rfc9381`. RFC 9381 kept the suite byte (0x04) used by the
-earlier draft-irtf-cfrg-vrf-03 but changed hash-to-curve and challenge
-construction incompatibly, so the draft-03 suite ships as a separate package.
+RFC 9381 kept the suite byte 0x04 of the earlier draft-irtf-cfrg-vrf-03 but
+changed hash-to-curve and challenge construction, so the two are not
+interoperable. The draft-03 suite, used by Algorand and Cardano, is a
+separate package with its own key and proof types.
 
-## Packages
-
-- `github.com/tmc/vrf`: RFC 9381 implementation (default; re-exports `rfc9381`).
-- `github.com/tmc/vrf/rfc9381`: RFC 9381 implementation.
-  Tests cover RFC 9381 Appendix B.4 and custom vectors from an independent
-  Rust implementation pinned in `rfc9381/interop_test.go`.
-- `github.com/tmc/vrf/draft03`: draft-03 implementation, used by Algorand's
-  consensus layer. Tests compare proofs and outputs with vectors captured from
-  Algorand's implementation; they establish agreement for those cases, not
-  general interoperability (`draft03/vrf_parity_test.go`).
-
-## Usage
+- `github.com/tmc/vrf`: RFC 9381; re-exports `rfc9381`.
+- `github.com/tmc/vrf/rfc9381`: RFC 9381.
+- `github.com/tmc/vrf/draft03`: draft-irtf-cfrg-vrf-03.
 
 ```go
-import "github.com/tmc/vrf"
-
-// Generate a key pair from randomness.
-pk, sk, err := vrf.GenerateKey(rand.Reader)
-
-// Or derive a private key from a 32-byte seed.
-sk = vrf.NewKeyFromSeed(seed)
-pk = sk.PublicKey()
-
-// Create a proof.
-proof, err := sk.Prove(message)
-
-// Verify and get the output.
-output, err := vrf.Verify(pk, message, proof)
+pub, priv, err := vrf.GenerateKey(rand.Reader)
+if err != nil {
+	log.Fatal(err)
+}
+proof, err := priv.Prove(message)
+if err != nil {
+	log.Fatal(err)
+}
+output, err := vrf.Verify(pub, message, proof)
 ```
 
-For Algorand-compatible proofs, import `github.com/tmc/vrf/draft03`. Its proof
-and key types are distinct from the RFC 9381 types, so a draft-03 proof cannot
-be passed to an RFC 9381 verifier by accident.
-
-See package documentation for details.
+Requires Go 1.24 or later. BSD 3-Clause license.
